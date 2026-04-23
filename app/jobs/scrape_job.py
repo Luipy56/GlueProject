@@ -130,9 +130,8 @@ async def _execute_scrape_impl(session: AsyncSession, portal_id: int | None = No
             err_text = str(exc)
             if isinstance(exc, httpx.ConnectError):
                 err_text += (
-                    "\n\n[Sugerencia] No se pudo conectar al servidor LLM. En Docker, Ollama/túnel en el host "
-                    "debe alcanzarse con `http://host.docker.internal:11434` (variable `GPM_LLM_BASE_URL` en "
-                    "docker-compose; se añade `/v1` solo). `127.0.0.1` dentro del contenedor no es tu PC."
+                    "\n\n[Sugerencia] La app ya probó varias URLs automáticamente. Si sigue fallando: "
+                    "`GET /api/llm-check`, túnel/Ollama en `0.0.0.0:11434`, o `docker compose -f docker-compose.host.yml up` (README)."
                 )
             run_db.error_message = err_text
             session.add(run_db)

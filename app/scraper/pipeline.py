@@ -1,14 +1,17 @@
 import json
+import logging
 from typing import Any
 
 from playwright.async_api import BrowserContext
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.config import llm_base_url_from_env
 from app.llm.client import chat_completion_json
+from app.llm.resolver import resolve_llm_base_url_with_report
 from app.models import Portal
 from app.scraper import idealista
 from app.settings_store import get_all_settings
+
+_log = logging.getLogger(__name__)
 
 
 async def run_portal_llm_pass(
@@ -19,11 +22,9 @@ async def run_portal_llm_pass(
     max_listings: int = 45,
 ) -> list[dict[str, Any]]:
     settings_map = await get_all_settings(session)
-    base_url = (
-        llm_base_url_from_env()
-        or settings_map.get("llm_base_url", "").strip()
-        or "https://api.openai.com/v1"
-    )
+    base_url, res_report = await resolve_llm_base_url_with_report(session)
+    if note := res_report.get("note"):
+        _log.info("LLM URL: %s", note)
     api_key = settings_map.get("llm_api_key", "")
     model = settings_map.get("llm_model", "gpt-4o-mini")
     temperature = float(settings_map.get("llm_temperature", "0.2"))

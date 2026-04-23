@@ -2,12 +2,16 @@
 {% block title %}Config · Garraf Monitor{% endblock %}
 {% block content %}
 <h1>Configuración</h1>
+<p class="muted" style="margin-bottom:1rem;">
+  La app <strong>elige sola</strong> una URL alineada al entorno (Docker, túnel, LAN, cloud): prueba varias direcciones en orden hasta que Ollama/API responda en <code>/v1/models</code>.
+  Opcional: <code>GPM_LLM_BASE_URL</code> en el entorno tiene prioridad sobre el campo de abajo.
+</p>
 {% if llm_env_override %}
 <div class="card" style="border-left:4px solid #ca8a04;margin-bottom:1rem;">
   <strong>LLM vía variable de entorno</strong>
   <p class="muted" style="margin:0.35rem 0 0;">
-    <code>GPM_LLM_BASE_URL</code> está definida en el contenedor y <strong>tiene prioridad</strong> sobre el campo «Base URL API» guardado en la base de datos.
-    Las llamadas al modelo usan: <code>{{ llm_base_url_effective }}</code>
+    <code>GPM_LLM_BASE_URL</code> está definida y <strong>tiene prioridad</strong> sobre el valor guardado en la base de datos.
+    Valor efectivo mostrado: <code>{{ llm_base_url_effective }}</code>
   </p>
 </div>
 {% endif %}
@@ -33,6 +37,7 @@
         Valor <strong>efectivo</strong> ahora para el LLM: <code>{{ llm_base_url_effective }}</code>
         (se añade <code>/v1</code> automáticamente si falta).
         {% if not llm_env_override %}En local con Ollama: <code>http://127.0.0.1:11434</code>. En Docker sin variable de entorno, usa <code>http://host.docker.internal:11434</code>.{% endif %}
+        <a href="/api/llm-check" target="_blank" rel="noopener">Probar conexión (/api/llm-check)</a>
       </p>
     </div>
     <div>

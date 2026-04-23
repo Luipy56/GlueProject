@@ -1,0 +1,16 @@
+# Red del anfitrión (Linux). Úsalo si Ollama o el túnel SSH solo escuchan en 127.0.0.1.
+#   docker compose -f docker-compose.host.yml up --build
+# La app queda en http://127.0.0.1:8000 del host (no hay mapeo -p).
+name: glueproject
+services:
+  app:
+    build: .
+    network_mode: host
+    environment:
+      GPM_DATA_DIR: /data
+      GPM_LLM_BASE_URL: http://127.0.0.1:11434
+    volumes:
+      - gpm_data:/data
+
+volumes:
+  gpm_data:

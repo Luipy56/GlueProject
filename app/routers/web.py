@@ -10,6 +10,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.config import APP_VERSION, llm_base_url_from_env
+from app.llm.resolver import clear_llm_resolver_cache
 from app.db import AsyncSessionLocal
 from app.deps import get_session
 from app.jobs.scrape_job import SCRAPER_BUSY, execute_scrape
@@ -110,6 +111,7 @@ async def config_post(
             "list_extraction_system_prompt": list_extraction_system_prompt,
         },
     )
+    clear_llm_resolver_cache()
     sched = getattr(request.app.state, "scheduler", None)
     if sched is not None:
         try:
