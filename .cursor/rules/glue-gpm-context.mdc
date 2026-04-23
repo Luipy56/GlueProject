@@ -1,0 +1,31 @@
+---
+description: GlueProject — Garraf Property Monitor (contexto, versión, flujo de trabajo)
+alwaysApply: true
+---
+
+# GlueProject / Garraf Property Monitor (GPM)
+
+Aplicación **FastAPI** con UI Jinja, **Playwright** (Chromium), extracción vía **LLM** (API compatible OpenAI u Ollama), **SQLite** (SQLModel + aiosqlite), **APScheduler** para scrape recurrente. Datos bajo `GPM_DATA_DIR`: `app.db`, `runs/*.csv`, perfil Playwright `pw_profile/`.
+
+## Versión visible
+
+- La versión de despliegue/UI es **`APP_VERSION`** en `app/config.py` (se inyecta en plantillas como `app_version`).
+- **Tras cada cambio funcional o de UI** que vaya a producción o quieras verificar en Docker/navegador, **sube `APP_VERSION`** (p. ej. patch `0.0.1` → `0.0.2`) para confirmar que el contenedor o el reload sirven el código nuevo.
+- No hace falta bump por cambios solo en tests o comentarios triviales si no afectan comportamiento desplegado.
+
+## Cómo correr y validar
+
+- Local: `uvicorn app.main:app --reload` con `GPM_DATA_DIR` apuntando a un directorio de datos (ver `README.md`).
+- Tests: dependencias de dev en `requirements-dev.txt`; ejecutar pytest desde el venv del proyecto.
+- Docker: `docker compose up --build`; para LLM en el host, usar `http://host.docker.internal:...` en config (no `127.0.0.1` dentro del contenedor).
+
+## Convenciones al implementar
+
+- Cambios **mínimos y enfocados**; reutilizar routers (`app/routers/`), modelos y plantillas existentes.
+- **No** editar `.venv/` ni dependencias salvo que el usuario lo pida; no añadir paquetes nuevos por iniciativa propia.
+- La UI y textos de usuario suelen ir en **español**; comentarios y mensajes técnicos internos pueden seguir el estilo ya presente en cada archivo (mucho código en inglés).
+- El scraping de portales es **frágil** (HTML cambia) y puede chocar con términos del sitio: documentar selectores frágiles y no asumir estabilidad eterna.
+
+## Despliegue remoto
+
+- Si el trabajo implica el host **ldeluipy**, aplicar también la regla global `ldeluipy-host-context` (SSH, Apache, DB, pruebas pre/post deploy).

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Listados · Garraf Monitor{% endblock %}
+{% block content %}
+<h1>Listados</h1>
+<p class="muted">
+  Intervalo configurado: {{ settings.get('scrape_interval_hours', '8') }} h ·
+  Modelo: {{ settings.get('llm_model', '') }} ·
+  {% if latest_run %}
+  Último scraping OK: #{{ latest_run.id }} · {{ latest_run.started_at }} ·
+  <a href="/runs/{{ latest_run.id }}/download">CSV</a>
+  {% else %}
+  Aún no hay ejecuciones correctas.
+  {% endif %}
+</p>
+<div class="row" style="margin-bottom:1rem;">
+  <p class="muted" style="margin:0;">
+    Filtro:
+    {% if only_latest_run %}
+    <a href="/">Ver todos</a>
+    {% else %}
+    <a href="/?only_latest_run=1">Solo última ejecución OK</a>
+    {% endif %}
+  </p>
+  <form method="post" action="/run-now" class="gpm-scrape-form">
+    <button class="primary" type="submit">Ejecutar ahora</button>
+  </form>
+</div>
+<div style="overflow:auto;">
+<table>
+  <thead>
+    <tr>
+      <th>Portal</th>
+      <th>Título</th>
+      <th>Precio</th>
+      <th>m²</th>
+      <th>Teléfono</th>
+      <th>Vendedor</th>
+      <th>URL</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for listing, portal in listings %}
+    <tr>
+      <td>{{ portal.name }}</td>
+      <td>{{ listing.title or '—' }}</td>
+      <td>{{ listing.price_raw or '—' }}</td>
+      <td>{{ listing.m2 or '—' }}</td>
+      <td>{{ listing.phone or '—' }}</td>
+      <td>{{ listing.seller_type }}</td>
+      <td style="max-width:220px;word-break:break-all;"><a href="{{ listing.canonical_url }}" target="_blank" rel="noopener">abrir</a></td>
+      <td>
+        <form method="post" action="/blacklist/from_listing" style="margin:0;">
+          <input type="hidden" name="canonical_url" value="{{ listing.canonical_url }}" />
+          <button class="danger" type="submit" title="Ocultar">Blacklist</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="muted">Sin datos todavía. Ejecuta un scraping desde “Ejecuciones”.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

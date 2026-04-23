@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Test & tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# App data (SQLite, CSV runs, Playwright profile)
+/data/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo

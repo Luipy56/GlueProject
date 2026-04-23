@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Garraf Monitor{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e7ecf3;
+      --muted: #9aa7b2;
+      --accent: #3b82f6;
+      --border: #2a3545;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header {
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 1rem 1.25rem; }
+    nav a { margin-right: 1rem; font-weight: 600; }
+    main .wrap { padding-top: 1.5rem; padding-bottom: 2rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td { padding: 0.55rem 0.65rem; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 0.9rem; }
+    th { text-align: left; background: #141c28; color: var(--muted); font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; }
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0f1419;
+      color: var(--text);
+    }
+    textarea { min-height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }
+    button, .btn {
+      display: inline-block;
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #243044;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.primary, .btn.primary { background: var(--accent); border-color: #2563eb; }
+    button.danger { background: #3f1d24; border-color: #7f1d1d; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } }
+    button:disabled { opacity: 0.75; cursor: wait; }
+    tr.run-row-failed { background: #241a1c; box-shadow: inset 0 0 0 1px #7f1d1d; }
+    .banner-ok { border: 1px solid #166534; background: #14241a; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap row" style="justify-content: space-between; align-items: center;">
+      <nav>
+        <a href="/">Listados</a>
+        <a href="/runs">Ejecuciones</a>
+        <a href="/portals">Portales</a>
+        <a href="/config">Config</a>
+        <a href="/blacklist">Blacklist</a>
+      </nav>
+      <span class="muted" style="font-size:0.85rem;white-space:nowrap;" title="Versión desplegada">Versión {{ app_version }}</span>
+    </div>
+  </header>
+  <main><div class="wrap">{% block content %}{% endblock %}</div></main>
+  <script>
+  (function () {
+    document.querySelectorAll("form.gpm-scrape-form").forEach(function (form) {
+      form.addEventListener("submit", function (e) {
+        if (form.dataset.gpmSubmitting === "1") {
+          e.preventDefault();
+          return;
+        }
+        form.dataset.gpmSubmitting = "1";
+        form.querySelectorAll("button[type='submit'], input[type='submit']").forEach(function (btn) {
+          btn.disabled = true;
+          if (btn.tagName === "BUTTON" && !btn.dataset.gpmOriginal) {
+            btn.dataset.gpmOriginal = btn.textContent;
+          }
+          if (btn.tagName === "BUTTON") {
+            btn.textContent = "Ejecutando… (varios minutos)";
+          }
+        });
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

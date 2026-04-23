@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Config · Garraf Monitor{% endblock %}
+{% block content %}
+<h1>Configuración</h1>
+{% if llm_env_override %}
+<div class="card" style="border-left:4px solid #ca8a04;margin-bottom:1rem;">
+  <strong>LLM vía variable de entorno</strong>
+  <p class="muted" style="margin:0.35rem 0 0;">
+    <code>GPM_LLM_BASE_URL</code> está definida en el contenedor y <strong>tiene prioridad</strong> sobre el campo «Base URL API» guardado en la base de datos.
+    Las llamadas al modelo usan: <code>{{ llm_base_url_effective }}</code>
+  </p>
+</div>
+{% endif %}
+<form method="post" action="/config" class="card">
+  <div class="grid2">
+    <div>
+      <label for="scrape_interval_hours">Intervalo scheduler (horas)</label>
+      <input id="scrape_interval_hours" name="scrape_interval_hours" type="number" step="0.25" min="0.25"
+             value="{{ settings.get('scrape_interval_hours', '8') }}" required />
+    </div>
+    <div>
+      <label for="llm_provider">Proveedor LLM</label>
+      <select id="llm_provider" name="llm_provider">
+        <option value="openai_compatible" {% if settings.get('llm_provider') == 'openai_compatible' %}selected{% endif %}>OpenAI-compatible (remoto)</option>
+        <option value="ollama" {% if settings.get('llm_provider') == 'ollama' %}selected{% endif %}>Ollama (local, API /v1)</option>
+      </select>
+    </div>
+    <div>
+      <label for="llm_base_url">Base URL API</label>
+      <input id="llm_base_url" name="llm_base_url" type="text"
+             value="{{ settings.get('llm_base_url', '') }}" required />
+      <p class="muted" style="margin:0.35rem 0 0;">
+        Valor <strong>efectivo</strong> ahora para el LLM: <code>{{ llm_base_url_effective }}</code>
+        (se añade <code>/v1</code> automáticamente si falta).
+        {% if not llm_env_override %}En local con Ollama: <code>http://127.0.0.1:11434</code>. En Docker sin variable de entorno, usa <code>http://host.docker.internal:11434</code>.{% endif %}
+      </p>
+    </div>
+    <div>
+      <label for="llm_api_key">API key (vacío para Ollama local)</label>
+      <input id="llm_api_key" name="llm_api_key" type="text" value="{{ settings.get('llm_api_key', '') }}" autocomplete="off" />
+    </div>
+    <div>
+      <label for="llm_model">Modelo</label>
+      <input id="llm_model" name="llm_model" type="text" value="{{ settings.get('llm_model', '') }}" required />
+    </div>
+    <div>
+      <label for="llm_temperature">Temperature</label>
+      <input id="llm_temperature" name="llm_temperature" type="text" value="{{ settings.get('llm_temperature', '0.2') }}" required />
+    </div>
+  </div>
+  <div style="margin-top:1rem;">
+    <label for="list_extraction_system_prompt">System prompt (extracción JSON)</label>
+    <textarea id="list_extraction_system_prompt" name="list_extraction_system_prompt" required>{{ settings.get('list_extraction_system_prompt', '') }}</textarea>
+  </div>
+  <p style="margin-top:1rem;"><button class="primary" type="submit">Guardar</button></p>
+</form>
+{% endblock %}

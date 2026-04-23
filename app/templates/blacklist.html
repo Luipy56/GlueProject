@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Blacklist · Garraf Monitor{% endblock %}
+{% block content %}
+<h1>Blacklist</h1>
+<p class="muted">Patrón: URL canónica exacta o prefijo. Oculta en el listado y omite en futuros merges.</p>
+<div class="card">
+  <form method="post" action="/blacklist/add">
+    <label for="pattern">Patrón</label>
+    <input id="pattern" name="pattern" type="text" required />
+    <label for="note" style="margin-top:0.75rem;">Nota (opcional)</label>
+    <input id="note" name="note" type="text" />
+    <p><button class="primary" type="submit">Añadir</button></p>
+  </form>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Patrón</th>
+      <th>Nota</th>
+      <th>Creado</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in entries %}
+    <tr>
+      <td>{{ e.id }}</td>
+      <td style="word-break:break-all;">{{ e.pattern }}</td>
+      <td>{{ e.note or '—' }}</td>
+      <td>{{ e.created_at }}</td>
+      <td>
+        <form method="post" action="/blacklist/delete" style="margin:0;">
+          <input type="hidden" name="entry_id" value="{{ e.id }}" />
+          <button class="danger" type="submit">Quitar</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="muted">Vacío.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

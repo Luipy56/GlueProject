@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Ejecuciones · Garraf Monitor{% endblock %}
+{% block content %}
+<h1>Historial de scrapings</h1>
+{% if success_message %}
+<div class="banner-ok">
+  <strong>Listo</strong>
+  <p style="margin:0.35rem 0 0;">{{ success_message }}</p>
+</div>
+{% endif %}
+{% if run_error %}
+<div class="card" style="border-color:#7f1d1d;background:#2a1518;">
+  <strong>Error</strong>
+  <p class="muted" style="margin:0.35rem 0 0.25rem;">Motivo guardado para esta ejecución (revisa también la columna «Detalle» en la tabla).</p>
+  <pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-size:0.85rem;">{{ run_error }}</pre>
+</div>
+{% endif %}
+<p class="muted">Disparo manual (misma lógica que el scheduler). Solo una ejecución a la vez: el botón se desactiva al enviar.</p>
+<form method="post" action="/run-now" class="card row gpm-scrape-form">
+  <div>
+    <label for="portal_id">Portal (opcional)</label>
+    <input id="portal_id" name="portal_id" type="text" placeholder="ID numérico o vacío = todos" />
+  </div>
+  <div style="align-self:flex-end;">
+    <button class="primary" type="submit">Ejecutar ahora</button>
+  </div>
+</form>
+<div style="overflow:auto;">
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Inicio</th>
+      <th>Fin</th>
+      <th>Estado</th>
+      <th>Nuevos</th>
+      <th>Actualizados</th>
+      <th>CSV</th>
+      <th>Detalle / error</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in runs %}
+    <tr id="run-{{ r.id }}" {% if failed_run_id and r.id == failed_run_id %}class="run-row-failed"{% endif %}>
+      <td>{{ r.id }}</td>
+      <td>{{ r.started_at }}</td>
+      <td>{{ r.finished_at or '—' }}</td>
+      <td><strong>{{ r.status }}</strong></td>
+      <td>{{ r.new_listings }}</td>
+      <td>{{ r.updated_listings }}</td>
+      <td>{% if r.csv_path %}<a href="/runs/{{ r.id }}/download">descargar</a>{% else %}—{% endif %}</td>
+      <td style="min-width:280px;max-width:560px;white-space:pre-wrap;word-break:break-word;font-size:0.85rem;">
+        {% if r.error_message %}{{ r.error_message }}{% elif r.status == 'failed' %}<span class="muted">(sin mensaje)</span>{% else %}—{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="muted">Sin ejecuciones.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if failed_run_id %}
+<script>
+requestAnimationFrame(function () {
+  var el = document.getElementById("run-{{ failed_run_id }}");
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+</script>
+{% endif %}
+{% endblock %}
