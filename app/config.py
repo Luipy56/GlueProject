@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Bump this when you ship a new Docker image so you can confirm the UI is updated.
-APP_VERSION = "0.0.5"
+APP_VERSION = "0.0.6"
 
 
 def llm_base_url_from_env() -> str | None:

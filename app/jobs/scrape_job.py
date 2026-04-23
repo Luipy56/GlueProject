@@ -130,8 +130,9 @@ async def _execute_scrape_impl(session: AsyncSession, portal_id: int | None = No
             err_text = str(exc)
             if isinstance(exc, httpx.ConnectError):
                 err_text += (
-                    "\n\n[Sugerencia] La app ya probó varias URLs automáticamente. Si sigue fallando: "
-                    "`GET /api/llm-check`, túnel/Ollama en `0.0.0.0:11434`, o `docker compose -f docker-compose.host.yml up` (README)."
+                    "\n\n[Hint] The app already tried several URLs automatically. If it still fails: "
+                    "`GET /api/llm-check`, expose Ollama on `0.0.0.0:11434`, or "
+                    "`docker compose -f docker-compose.host.yml up` (see README)."
                 )
             run_db.error_message = err_text
             session.add(run_db)

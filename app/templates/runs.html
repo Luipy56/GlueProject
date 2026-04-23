@@ -1,42 +1,42 @@
 {% extends "base.html" %}
-{% block title %}Ejecuciones · Garraf Monitor{% endblock %}
+{% block title %}{{ _('runs.title') }}{% endblock %}
 {% block content %}
-<h1>Historial de scrapings</h1>
+<h1>{{ _('runs.h1') }}</h1>
 {% if success_message %}
 <div class="banner-ok">
-  <strong>Listo</strong>
+  <strong>{{ _('runs.banner_ok_title') }}</strong>
   <p style="margin:0.35rem 0 0;">{{ success_message }}</p>
 </div>
 {% endif %}
 {% if run_error %}
 <div class="card" style="border-color:#7f1d1d;background:#2a1518;">
-  <strong>Error</strong>
-  <p class="muted" style="margin:0.35rem 0 0.25rem;">Motivo guardado para esta ejecución (revisa también la columna «Detalle» en la tabla).</p>
+  <strong>{{ _('runs.error_title') }}</strong>
+  <p class="muted" style="margin:0.35rem 0 0.25rem;">{{ _('runs.error_hint') }}</p>
   <pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-size:0.85rem;">{{ run_error }}</pre>
 </div>
 {% endif %}
-<p class="muted">Disparo manual (misma lógica que el scheduler). Solo una ejecución a la vez: el botón se desactiva al enviar.</p>
+<p class="muted">{{ _('runs.manual_hint') }}</p>
 <form method="post" action="/run-now" class="card row gpm-scrape-form">
   <div>
-    <label for="portal_id">Portal (opcional)</label>
-    <input id="portal_id" name="portal_id" type="text" placeholder="ID numérico o vacío = todos" />
+    <label for="portal_id">{{ _('runs.portal_optional') }}</label>
+    <input id="portal_id" name="portal_id" type="text" placeholder="{{ _('runs.portal_placeholder') }}" />
   </div>
   <div style="align-self:flex-end;">
-    <button class="primary" type="submit">Ejecutar ahora</button>
+    <button class="primary" type="submit">{{ _('index.run_now') }}</button>
   </div>
 </form>
 <div style="overflow:auto;">
 <table>
   <thead>
     <tr>
-      <th>ID</th>
-      <th>Inicio</th>
-      <th>Fin</th>
-      <th>Estado</th>
-      <th>Nuevos</th>
-      <th>Actualizados</th>
-      <th>CSV</th>
-      <th>Detalle / error</th>
+      <th>{{ _('th.id') }}</th>
+      <th>{{ _('th.start') }}</th>
+      <th>{{ _('th.end') }}</th>
+      <th>{{ _('th.status') }}</th>
+      <th>{{ _('th.new') }}</th>
+      <th>{{ _('th.updated') }}</th>
+      <th>{{ _('th.csv') }}</th>
+      <th>{{ _('th.detail') }}</th>
     </tr>
   </thead>
   <tbody>
@@ -48,13 +48,13 @@
       <td><strong>{{ r.status }}</strong></td>
       <td>{{ r.new_listings }}</td>
       <td>{{ r.updated_listings }}</td>
-      <td>{% if r.csv_path %}<a href="/runs/{{ r.id }}/download">descargar</a>{% else %}—{% endif %}</td>
+      <td>{% if r.csv_path %}<a href="/runs/{{ r.id }}/download">{{ _('runs.download') }}</a>{% else %}—{% endif %}</td>
       <td style="min-width:280px;max-width:560px;white-space:pre-wrap;word-break:break-word;font-size:0.85rem;">
-        {% if r.error_message %}{{ r.error_message }}{% elif r.status == 'failed' %}<span class="muted">(sin mensaje)</span>{% else %}—{% endif %}
+        {% if r.error_message %}{{ r.error_message }}{% elif r.status == 'failed' %}<span class="muted">{{ _('runs.no_message') }}</span>{% else %}—{% endif %}
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="8" class="muted">Sin ejecuciones.</td></tr>
+    <tr><td colspan="8" class="muted">{{ _('runs.empty') }}</td></tr>
     {% endfor %}
   </tbody>
 </table>

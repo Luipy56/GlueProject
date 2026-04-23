@@ -1,43 +1,43 @@
 {% extends "base.html" %}
-{% block title %}Portales · Garraf Monitor{% endblock %}
+{% block title %}{{ _('portals.title') }}{% endblock %}
 {% block content %}
-<h1>Portales</h1>
+<h1>{{ _('portals.h1') }}</h1>
 <div class="card">
-  <h2 style="margin-top:0;">Añadir portal</h2>
+  <h2 style="margin-top:0;">{{ _('portals.add_title') }}</h2>
   <form method="post" action="/portals/add">
-    <label for="name">Nombre</label>
+    <label for="name">{{ _('label.name') }}</label>
     <input id="name" name="name" type="text" required />
-    <label for="search_url" style="margin-top:0.75rem;">URL de búsqueda</label>
+    <label for="search_url" style="margin-top:0.75rem;">{{ _('label.search_url') }}</label>
     <input id="search_url" name="search_url" type="text" required />
-    <label for="prompt_template" style="margin-top:0.75rem;">Plantilla de instrucciones (portal)</label>
+    <label for="prompt_template" style="margin-top:0.75rem;">{{ _('label.prompt_template') }}</label>
     <textarea id="prompt_template" name="prompt_template" required></textarea>
-    <label style="margin-top:0.75rem;"><input type="checkbox" name="fetch_detail_for_phone" /> Abrir detalle para teléfono (Idealista)</label>
-    <p><button class="primary" type="submit">Crear</button></p>
+    <label style="margin-top:0.75rem;"><input type="checkbox" name="fetch_detail_for_phone" /> {{ _('portals.fetch_phone') }}</label>
+    <p><button class="primary" type="submit">{{ _('portals.create') }}</button></p>
   </form>
 </div>
 {% for p in portals %}
 <div class="card">
-  <h3 style="margin-top:0;">{{ p.name }} {% if not p.enabled %}<span class="muted">(desactivado)</span>{% endif %}</h3>
+  <h3 style="margin-top:0;">{{ p.name }} {% if not p.enabled %}<span class="muted">{{ _('portals.disabled') }}</span>{% endif %}</h3>
   <form method="post" action="/portals/edit">
     <input type="hidden" name="portal_id" value="{{ p.id }}" />
-    <label>Nombre</label>
+    <label>{{ _('label.name') }}</label>
     <input name="name" type="text" value="{{ p.name }}" required />
-    <label style="margin-top:0.75rem;">URL</label>
+    <label style="margin-top:0.75rem;">{{ _('label.url') }}</label>
     <input name="search_url" type="text" value="{{ p.search_url }}" required />
-    <label style="margin-top:0.75rem;">Instrucciones</label>
+    <label style="margin-top:0.75rem;">{{ _('label.instructions') }}</label>
     <textarea name="prompt_template" required>{{ p.prompt_template }}</textarea>
-    <label style="margin-top:0.75rem;"><input type="checkbox" name="fetch_detail_for_phone" {% if p.fetch_detail_for_phone %}checked{% endif %} /> Detalle teléfono</label>
-    <label style="margin-top:0.75rem;"><input type="checkbox" name="enabled" {% if p.enabled %}checked{% endif %} /> Activo</label>
+    <label style="margin-top:0.75rem;"><input type="checkbox" name="fetch_detail_for_phone" {% if p.fetch_detail_for_phone %}checked{% endif %} /> {{ _('portals.detail_phone') }}</label>
+    <label style="margin-top:0.75rem;"><input type="checkbox" name="enabled" {% if p.enabled %}checked{% endif %} /> {{ _('portals.active') }}</label>
     <p class="row">
-      <button class="primary" type="submit">Guardar</button>
+      <button class="primary" type="submit">{{ _('config.save') }}</button>
     </p>
   </form>
-  <form method="post" action="/portals/delete" onsubmit="return confirm('¿Borrar portal y sus listados asociados?');">
+  <form method="post" action="/portals/delete" onsubmit="return confirm({{ _('portals.delete_confirm')|tojson }});">
     <input type="hidden" name="portal_id" value="{{ p.id }}" />
-    <button class="danger" type="submit">Eliminar</button>
+    <button class="danger" type="submit">{{ _('portals.delete') }}</button>
   </form>
 </div>
 {% else %}
-<p class="muted">No hay portales.</p>
+<p class="muted">{{ _('portals.none') }}</p>
 {% endfor %}
 {% endblock %}

@@ -1,24 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Blacklist · Garraf Monitor{% endblock %}
+{% block title %}{{ _('blacklist.title') }}{% endblock %}
 {% block content %}
-<h1>Blacklist</h1>
-<p class="muted">Patrón: URL canónica exacta o prefijo. Oculta en el listado y omite en futuros merges.</p>
+<h1>{{ _('blacklist.h1') }}</h1>
+<p class="muted">{{ _('blacklist.intro') }}</p>
 <div class="card">
   <form method="post" action="/blacklist/add">
-    <label for="pattern">Patrón</label>
+    <label for="pattern">{{ _('label.pattern') }}</label>
     <input id="pattern" name="pattern" type="text" required />
-    <label for="note" style="margin-top:0.75rem;">Nota (opcional)</label>
+    <label for="note" style="margin-top:0.75rem;">{{ _('label.note_optional') }}</label>
     <input id="note" name="note" type="text" />
-    <p><button class="primary" type="submit">Añadir</button></p>
+    <p><button class="primary" type="submit">{{ _('blacklist.add') }}</button></p>
   </form>
 </div>
 <table>
   <thead>
     <tr>
-      <th>ID</th>
-      <th>Patrón</th>
-      <th>Nota</th>
-      <th>Creado</th>
+      <th>{{ _('th.id') }}</th>
+      <th>{{ _('label.pattern') }}</th>
+      <th>{{ _('th.note') }}</th>
+      <th>{{ _('th.created') }}</th>
       <th></th>
     </tr>
   </thead>
@@ -32,12 +32,12 @@
       <td>
         <form method="post" action="/blacklist/delete" style="margin:0;">
           <input type="hidden" name="entry_id" value="{{ e.id }}" />
-          <button class="danger" type="submit">Quitar</button>
+          <button class="danger" type="submit">{{ _('blacklist.remove') }}</button>
         </form>
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="5" class="muted">Vacío.</td></tr>
+    <tr><td colspan="5" class="muted">{{ _('blacklist.empty') }}</td></tr>
     {% endfor %}
   </tbody>
 </table>

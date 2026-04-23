@@ -1,41 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Listados · Garraf Monitor{% endblock %}
+{% block title %}{{ _('index.title') }}{% endblock %}
 {% block content %}
-<h1>Listados</h1>
+<h1>{{ _('index.h1') }}</h1>
 <p class="muted">
-  Intervalo configurado: {{ settings.get('scrape_interval_hours', '8') }} h ·
-  Modelo: {{ settings.get('llm_model', '') }} ·
+  {{ _('index.interval') }}: {{ settings.get('scrape_interval_hours', '8') }} h ·
+  {{ _('index.model') }}: {{ settings.get('llm_model', '') }} ·
   {% if latest_run %}
-  Último scraping OK: #{{ latest_run.id }} · {{ latest_run.started_at }} ·
+  {{ _('index.last_ok') }}: #{{ latest_run.id }} · {{ latest_run.started_at }} ·
   <a href="/runs/{{ latest_run.id }}/download">CSV</a>
   {% else %}
-  Aún no hay ejecuciones correctas.
+  {{ _('index.no_ok_runs') }}
   {% endif %}
 </p>
 <div class="row" style="margin-bottom:1rem;">
   <p class="muted" style="margin:0;">
-    Filtro:
+    {{ _('index.filter') }}:
     {% if only_latest_run %}
-    <a href="/">Ver todos</a>
+    <a href="/">{{ _('index.view_all') }}</a>
     {% else %}
-    <a href="/?only_latest_run=1">Solo última ejecución OK</a>
+    <a href="/?only_latest_run=1">{{ _('index.only_last_ok') }}</a>
     {% endif %}
   </p>
   <form method="post" action="/run-now" class="gpm-scrape-form">
-    <button class="primary" type="submit">Ejecutar ahora</button>
+    <button class="primary" type="submit">{{ _('index.run_now') }}</button>
   </form>
 </div>
 <div style="overflow:auto;">
 <table>
   <thead>
     <tr>
-      <th>Portal</th>
-      <th>Título</th>
-      <th>Precio</th>
-      <th>m²</th>
-      <th>Teléfono</th>
-      <th>Vendedor</th>
-      <th>URL</th>
+      <th>{{ _('th.portal') }}</th>
+      <th>{{ _('th.title') }}</th>
+      <th>{{ _('th.price') }}</th>
+      <th>{{ _('th.m2') }}</th>
+      <th>{{ _('th.phone') }}</th>
+      <th>{{ _('th.seller') }}</th>
+      <th>{{ _('th.url') }}</th>
       <th></th>
     </tr>
   </thead>
@@ -48,16 +48,16 @@
       <td>{{ listing.m2 or '—' }}</td>
       <td>{{ listing.phone or '—' }}</td>
       <td>{{ listing.seller_type }}</td>
-      <td style="max-width:220px;word-break:break-all;"><a href="{{ listing.canonical_url }}" target="_blank" rel="noopener">abrir</a></td>
+      <td style="max-width:220px;word-break:break-all;"><a href="{{ listing.canonical_url }}" target="_blank" rel="noopener">{{ _('common.open') }}</a></td>
       <td>
         <form method="post" action="/blacklist/from_listing" style="margin:0;">
           <input type="hidden" name="canonical_url" value="{{ listing.canonical_url }}" />
-          <button class="danger" type="submit" title="Ocultar">Blacklist</button>
+          <button class="danger" type="submit" title="{{ _('index.blacklist_title') }}">{{ _('common.blacklist') }}</button>
         </form>
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="8" class="muted">Sin datos todavía. Ejecuta un scraping desde “Ejecuciones”.</td></tr>
+    <tr><td colspan="8" class="muted">{{ _('index.empty') }}</td></tr>
     {% endfor %}
   </tbody>
 </table>

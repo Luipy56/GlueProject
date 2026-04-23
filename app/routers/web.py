@@ -1,15 +1,20 @@
+import json
 import logging
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote
+from typing import Any
+from urllib.parse import quote, urlparse
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.config import APP_VERSION, llm_base_url_from_env
+from app.i18n import LOCALES, html_lang_attr, resolve_locale, translate
 from app.llm.resolver import clear_llm_resolver_cache
 from app.db import AsyncSessionLocal
 from app.deps import get_session
@@ -22,6 +27,57 @@ from app.worker.scheduler import reschedule_scrape
 router = APIRouter(tags=["web"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 templates.env.globals["app_version"] = APP_VERSION
+templates.env.filters["tojson"] = lambda value: Markup(json.dumps(value, ensure_ascii=False))
+
+
+def _page_response(request: Request, name: str, context: Mapping[str, Any] | None = None) -> HTMLResponse:
+    ctx = dict(context or {})
+    locale = resolve_locale(request)
+
+    def _(key: str, **kwargs: Any) -> str:
+        return translate(locale, key, **kwargs)
+
+    merged: dict[str, Any] = {
+        "request": request,
+        "_": _,
+        "locale": locale,
+        "html_lang": html_lang_attr(locale),
+        **ctx,
+    }
+    return templates.TemplateResponse(request, name, merged)
+
+
+def _safe_referer_path(request: Request) -> str:
+    ref = request.headers.get("referer") or ""
+    if not ref:
+        return "/"
+    p = urlparse(ref)
+    if p.scheme not in ("http", "https"):
+        return "/"
+    if p.hostname != request.url.hostname:
+        return "/"
+    path = p.path or "/"
+    if not path.startswith("/"):
+        return "/"
+    return path + (f"?{p.query}" if p.query else "")
+
+
+@router.get("/set-language/{lang}", response_class=RedirectResponse)
+async def set_language(request: Request, lang: str) -> RedirectResponse:
+    code = lang.strip().lower()
+    if code not in LOCALES:
+        code = "es"
+    target = _safe_referer_path(request)
+    resp = RedirectResponse(url=target, status_code=303)
+    resp.set_cookie(
+        "gpm_lang",
+        code,
+        max_age=365 * 24 * 3600,
+        httponly=False,
+        samesite="lax",
+        path="/",
+    )
+    return resp
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -56,7 +112,7 @@ async def index(
     only_flag = bool(only_latest_run)
 
     cfg = await get_all_settings(session)
-    return templates.TemplateResponse(
+    return _page_response(
         request,
         "index.html",
         {
@@ -76,7 +132,7 @@ async def config_get(
     cfg = await get_all_settings(session)
     env_llm = llm_base_url_from_env()
     effective_llm = env_llm or (cfg.get("llm_base_url", "").strip() or "https://api.openai.com/v1")
-    return templates.TemplateResponse(
+    return _page_response(
         request,
         "config.html",
         {
@@ -127,7 +183,7 @@ async def portals_get(
     session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
     portals = (await session.exec(select(Portal).order_by(Portal.id))).all()  # type: ignore[arg-type]
-    return templates.TemplateResponse(request, "portals.html", {"portals": portals})
+    return _page_response(request, "portals.html", {"portals": portals})
 
 
 @router.post("/portals/add")
@@ -195,28 +251,30 @@ async def runs_get(
     done_run: int = 0,
 ) -> HTMLResponse:
     runs = (await session.exec(select(ScrapeRun).order_by(ScrapeRun.id.desc()))).all()  # type: ignore[union-attr]
+    loc = resolve_locale(request)
     banner_error = error.strip()
     failed_run_id: int | None = failed_run or None
     if failed_run_id:
         row = await session.get(ScrapeRun, failed_run_id)
         if row is None:
-            banner_error = f"No se encontró la ejecución #{failed_run_id}."
+            banner_error = translate(loc, "runs.not_found", id=failed_run_id)
         elif row.error_message:
             banner_error = row.error_message.strip()
         elif row.status == RunStatus.failed.value:
-            banner_error = (
-                "La ejecución terminó en estado «failed» pero no hay mensaje de error guardado."
-            )
+            banner_error = translate(loc, "runs.failed_no_message")
     success_message = ""
     done_run_id: int | None = done_run or None
     if done_run_id:
         row_done = await session.get(ScrapeRun, done_run_id)
         if row_done and row_done.status == RunStatus.success.value:
-            success_message = (
-                f"Ejecución #{done_run_id} correcta: {row_done.new_listings} anuncios nuevos, "
-                f"{row_done.updated_listings} actualizados."
+            success_message = translate(
+                loc,
+                "runs.success_done",
+                id=done_run_id,
+                new=row_done.new_listings,
+                updated=row_done.updated_listings,
             )
-    return templates.TemplateResponse(
+    return _page_response(
         request,
         "runs.html",
         {
@@ -249,7 +307,7 @@ async def blacklist_get(
     session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
     rows = (await session.exec(select(BlacklistEntry).order_by(BlacklistEntry.id.desc()))).all()  # type: ignore[union-attr]
-    return templates.TemplateResponse(request, "blacklist.html", {"entries": rows})
+    return _page_response(request, "blacklist.html", {"entries": rows})
 
 
 @router.post("/blacklist/add")
@@ -304,15 +362,13 @@ async def run_now(
 ) -> RedirectResponse:
     """Use a dedicated DB session so long scrapes do not share the request session (avoids async/greenlet issues)."""
     pid: int | None = int(portal_id) if portal_id.strip().isdigit() else None
+    loc = resolve_locale(request)
     try:
         async with AsyncSessionLocal() as session:
             run = await execute_scrape(session, portal_id=pid)
     except RuntimeError as exc:
         if SCRAPER_BUSY in str(exc):
-            msg = quote(
-                "Ya hay una ejecución en curso. Espera a que termine o revisa la tabla de ejecuciones.",
-                safe="",
-            )
+            msg = quote(translate(loc, "run_now.busy"), safe="")
             return RedirectResponse(f"/runs?error={msg}", status_code=303)
         logging.exception("POST /run-now failed")
         msg = quote(str(exc)[:1500], safe="")
