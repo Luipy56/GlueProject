@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{% block title %}{{ _('base.default_title') }}{% endblock %}</title>
+  <link rel="icon" href="/static/favicon.png" type="image/png" sizes="32x32" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
@@ -19,7 +20,8 @@
   })();
   </script>
   <style>
-    html[data-theme="light"] {
+    /* Default tokens on `html` so body always has contrast if JS/localStorage fails or before data-theme is set. */
+    html {
       color-scheme: light;
       --bg: #f4f4f5;
       --bg-muted: #e4e4e7;
@@ -121,31 +123,139 @@
       margin: 0 auto;
       padding: 0 max(clamp(0.75rem, 4vw, 1.25rem), env(safe-area-inset-left, 0px)) 0 max(clamp(0.75rem, 4vw, 1.25rem), env(safe-area-inset-right, 0px));
     }
-    .header-inner {
+    .header-shell {
+      padding: 0.75rem 0;
+    }
+    @media (max-width: 720px) {
+      .wrap {
+        padding-left: max(1rem, 5vw, env(safe-area-inset-left, 0px));
+        padding-right: max(1rem, 5vw, env(safe-area-inset-right, 0px));
+      }
+      .header-shell {
+        padding-top: 0.65rem;
+        padding-bottom: 0.65rem;
+      }
+      .header-top {
+        row-gap: 0.65rem;
+      }
+      .nav-toggle {
+        display: inline-flex;
+      }
+      .header-nav-row {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: var(--gpm-header-h, 5.75rem);
+        bottom: 0;
+        margin-top: 0;
+        padding: 0.75rem max(1rem, 5vw) max(1rem, env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        z-index: 35;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        transform: translateX(-105%);
+        visibility: hidden;
+        transition: transform 0.22s ease, visibility 0.22s ease;
+      }
+      body.gpm-nav-open .site-header .header-nav-row {
+        transform: translateX(0);
+        visibility: visible;
+      }
+      .main-nav {
+        flex-direction: column;
+        align-items: stretch;
+        flex-wrap: nowrap;
+        overflow: visible;
+        gap: 0.35rem;
+        padding: 0;
+        scroll-padding: 0;
+      }
+      .main-nav a {
+        white-space: normal;
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-sm);
+      }
+      body.gpm-nav-open {
+        overflow: hidden;
+      }
+      .gpm-nav-backdrop {
+        display: block;
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: var(--gpm-header-h, 5.75rem);
+        bottom: 0;
+        z-index: 34;
+        background: rgba(9, 9, 11, 0.52);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.22s ease, visibility 0.22s ease;
+      }
+      html[data-theme="light"] .gpm-nav-backdrop {
+        background: rgba(9, 9, 11, 0.28);
+      }
+      body.gpm-nav-open .gpm-nav-backdrop {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+    }
+    .header-top {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem 1rem;
-      padding: 0.75rem 0;
     }
-    @media (max-width: 960px) {
-      .header-inner {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.65rem;
-      }
+    .header-top-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .nav-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 2.75rem;
+      height: 2.75rem;
+      padding: 0;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-muted);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    }
+    .nav-toggle:hover {
+      background: var(--surface-2);
+      border-color: var(--border-strong);
+    }
+    .nav-toggle:active {
+      transform: scale(0.96);
+    }
+    .gpm-nav-backdrop {
+      display: none;
+    }
+    .header-nav-row {
+      margin-top: 0.5rem;
+      padding-top: 0.45rem;
+      border-top: 1px solid var(--border);
+    }
+    @media (min-width: 721px) and (max-width: 960px) {
       .main-nav {
-        order: 2;
-        width: 100%;
-        padding-bottom: 0.2rem;
         flex-wrap: nowrap;
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: thin;
         gap: 0.35rem;
-        border-bottom: 1px solid var(--border);
+        padding: 0 0.35rem 0.2rem;
+        scroll-padding-inline: 0.65rem;
       }
       .main-nav::-webkit-scrollbar {
         height: 4px;
@@ -153,18 +263,6 @@
       .main-nav::-webkit-scrollbar-thumb {
         background: var(--border-strong);
         border-radius: 4px;
-      }
-      .brand {
-        order: 1;
-      }
-      .header-tools {
-        order: 3;
-        justify-content: flex-start;
-        flex-wrap: wrap;
-        width: 100%;
-        padding-top: 0.35rem;
-        gap: 0.5rem 0.75rem;
-        align-items: center;
       }
     }
     .brand {
@@ -205,13 +303,17 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.75rem 1rem;
+      justify-content: flex-end;
+      gap: 0.65rem 0.85rem;
+      padding: 0.2rem 0 0.2rem 0.35rem;
+      flex-shrink: 0;
     }
     .main-nav {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 0.2rem;
+      width: 100%;
     }
     .main-nav a {
       padding: 0.5rem 0.85rem;
@@ -233,23 +335,40 @@
       background: var(--accent);
       text-decoration: none;
     }
-    .lang-switch {
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .lang-select-wrap {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
-      font-size: 0.78rem;
     }
-    .lang-switch a {
-      padding: 0.2rem 0.45rem;
-      border-radius: 6px;
-      font-weight: 500;
-      color: var(--text-muted);
-    }
-    .lang-switch a:hover { color: var(--text); text-decoration: none; background: var(--bg-muted); }
-    .lang-switch a.current {
+    .lang-select {
+      min-width: 8.5rem;
+      max-width: 12rem;
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
       color: var(--text);
-      background: var(--surface-2);
-      text-decoration: none;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1.3;
+      cursor: pointer;
+      color-scheme: inherit;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .lang-select:hover {
+      border-color: var(--border-strong);
+      background-color: var(--surface-2);
     }
     .theme-toggle {
       display: inline-flex;
@@ -549,40 +668,65 @@
   data-gpm-submitting="{{ _('js.submitting')|e }}"
   data-theme-aria-dark="{{ _('nav.theme_aria_dark')|e }}"
   data-theme-aria-light="{{ _('nav.theme_aria_light')|e }}"
+  data-nav-open="{{ _('nav.menu_open')|e }}"
+  data-nav-close="{{ _('nav.menu_close')|e }}"
 >
   {% set path = request.url.path %}
   <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="brand" href="/" title="{{ _('base.default_title') }}">
-        <span class="brand-mark" aria-hidden="true">G</span>
-        <span class="brand-name">Garraf Monitor</span>
-      </a>
-      <nav class="main-nav" aria-label="Main">
-        <a href="/" class="{% if path == '/' %}nav-link--active{% endif %}">{{ _('nav.listings') }}</a>
-        <a href="/runs" class="{% if path == '/runs' or path.startswith('/runs/') %}nav-link--active{% endif %}">{{ _('nav.runs') }}</a>
-        <a href="/portals" class="{% if path == '/portals' %}nav-link--active{% endif %}">{{ _('nav.portals') }}</a>
-        <a href="/config" class="{% if path == '/config' %}nav-link--active{% endif %}">{{ _('nav.config') }}</a>
-        <a href="/blacklist" class="{% if path == '/blacklist' %}nav-link--active{% endif %}">{{ _('nav.blacklist') }}</a>
-      </nav>
-      <div class="header-tools">
-        <button type="button" class="theme-toggle" id="gpm-theme-toggle" aria-label="">
-          <svg class="icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-          </svg>
-          <svg class="icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
-        </button>
-        <span class="lang-switch muted">
-          <a href="/set-language/es" class="{% if locale == 'es' %}current{% endif %}">{{ _('nav.lang.es') }}</a>
-          <a href="/set-language/en" class="{% if locale == 'en' %}current{% endif %}">{{ _('nav.lang.en') }}</a>
-          <a href="/set-language/de" class="{% if locale == 'de' %}current{% endif %}">{{ _('nav.lang.de') }}</a>
-        </span>
-        <span class="version-pill" title="{{ _('nav.version_title') }}">{{ _('nav.version_label') }} {{ app_version }}</span>
+    <div class="wrap header-shell">
+      <div class="header-top">
+        <a class="brand" href="/" title="{{ _('base.default_title') }}">
+          <span class="brand-mark" aria-hidden="true">G</span>
+          <span class="brand-name">Garraf Monitor</span>
+        </a>
+        <div class="header-top-actions">
+          <button
+            type="button"
+            class="nav-toggle"
+            id="gpm-nav-toggle"
+            aria-controls="gpm-main-nav"
+            aria-expanded="false"
+            aria-label="{{ _('nav.menu_open')|e }}"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div class="header-tools">
+          <button type="button" class="theme-toggle" id="gpm-theme-toggle" aria-label="">
+            <svg class="icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+            </svg>
+            <svg class="icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+          </button>
+          <div class="lang-select-wrap">
+            <label for="gpm-lang-select" class="visually-hidden">{{ _('nav.lang_select_label') }}</label>
+            <select id="gpm-lang-select" class="lang-select" aria-label="{{ _('nav.lang_select_label')|e }}">
+              {% for code in gpm_locales %}
+              <option value="{{ code }}" lang="{{ code }}" {% if locale == code %}selected{% endif %}>{{ gpm_locale_native_labels.get(code, code) }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <span class="version-pill" title="{{ _('nav.version_title') }}">{{ _('nav.version_label') }} {{ app_version }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-nav-row">
+        <nav id="gpm-main-nav" class="main-nav" aria-label="Main">
+          <a href="/" class="{% if path == '/' %}nav-link--active{% endif %}">{{ _('nav.listings') }}</a>
+          <a href="/runs" class="{% if path == '/runs' or path.startswith('/runs/') %}nav-link--active{% endif %}">{{ _('nav.runs') }}</a>
+          <a href="/portals" class="{% if path == '/portals' %}nav-link--active{% endif %}">{{ _('nav.portals') }}</a>
+          <a href="/config" class="{% if path == '/config' %}nav-link--active{% endif %}">{{ _('nav.config') }}</a>
+          <a href="/blacklist" class="{% if path == '/blacklist' %}nav-link--active{% endif %}">{{ _('nav.blacklist') }}</a>
+          <a href="/documentation" class="{% if path == '/documentation' %}nav-link--active{% endif %}">{{ _('nav.documentation') }}</a>
+        </nav>
       </div>
     </div>
   </header>
+  <div class="gpm-nav-backdrop" id="gpm-nav-backdrop" aria-hidden="true"></div>
   <main><div class="wrap">{% block content %}{% endblock %}</div></main>
   <script>
   (function () {
@@ -627,6 +771,94 @@
       themeBtn.addEventListener("click", toggleTheme);
       themeAria();
     }
+    var langSel = document.getElementById("gpm-lang-select");
+    if (langSel) {
+      langSel.addEventListener("change", function () {
+        var v = langSel.value;
+        if (v) {
+          window.location.href = "/set-language/" + encodeURIComponent(v);
+        }
+      });
+    }
+    function mobileNavMq() {
+      return window.matchMedia("(max-width: 720px)");
+    }
+    function syncHeaderHeight() {
+      var h = document.querySelector(".site-header");
+      if (h) {
+        document.documentElement.style.setProperty("--gpm-header-h", h.offsetHeight + "px");
+      }
+    }
+    function setNavOpen(open) {
+      var bd = document.getElementById("gpm-nav-backdrop");
+      var tb = document.getElementById("gpm-nav-toggle");
+      var navOpen = document.body.getAttribute("data-nav-open") || "";
+      var navClose = document.body.getAttribute("data-nav-close") || "";
+      if (open) {
+        document.body.classList.add("gpm-nav-open");
+        if (tb) {
+          tb.setAttribute("aria-expanded", "true");
+          tb.setAttribute("aria-label", navClose);
+        }
+        if (bd) {
+          bd.setAttribute("aria-hidden", "false");
+        }
+        if (mobileNavMq().matches) {
+          document.body.style.overflow = "hidden";
+        }
+      } else {
+        document.body.classList.remove("gpm-nav-open");
+        if (tb) {
+          tb.setAttribute("aria-expanded", "false");
+          tb.setAttribute("aria-label", navOpen);
+        }
+        if (bd) {
+          bd.setAttribute("aria-hidden", "true");
+        }
+        document.body.style.overflow = "";
+      }
+      syncHeaderHeight();
+    }
+    function toggleNav() {
+      setNavOpen(!document.body.classList.contains("gpm-nav-open"));
+    }
+    var navToggle = document.getElementById("gpm-nav-toggle");
+    var navBackdrop = document.getElementById("gpm-nav-backdrop");
+    var mainNav = document.getElementById("gpm-main-nav");
+    if (navToggle) {
+      navToggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        toggleNav();
+      });
+    }
+    if (navBackdrop) {
+      navBackdrop.addEventListener("click", function () {
+        setNavOpen(false);
+      });
+    }
+    if (mainNav) {
+      mainNav.querySelectorAll("a").forEach(function (a) {
+        a.addEventListener("click", function () {
+          setNavOpen(false);
+        });
+      });
+    }
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        setNavOpen(false);
+      }
+    });
+    window.addEventListener("resize", function () {
+      syncHeaderHeight();
+      if (!mobileNavMq().matches) {
+        setNavOpen(false);
+      }
+    });
+    var siteHeader = document.querySelector(".site-header");
+    if (siteHeader && typeof ResizeObserver !== "undefined") {
+      new ResizeObserver(syncHeaderHeight).observe(siteHeader);
+    }
+    syncHeaderHeight();
   })();
   </script>
 </body>

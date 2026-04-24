@@ -8,15 +8,27 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.config import settings
 from app.models import Portal, RunStatus, ScrapeRun
+from app.scraper.errors import LlmExtractionEmptyError
 from app.scraper.pipeline import enrich_with_detail_phones, run_portal_llm_pass
 from app.scraper.playwright_session import persistent_browser_context
 from app.services.blacklist import active_patterns
 from app.services.export_csv import write_listings_csv
 from app.services.merge_listings import merge_listing_row
-
 SCRAPER_BUSY = "SCRAPER_BUSY"
 _busy_lock = asyncio.Lock()
 _scrape_in_progress = False
+
+_RUN_LLM_SNIPPET_MAX = 4500
+
+
+def _merge_run_llm_snippets(parts: list[str]) -> str | None:
+    chunks = [p.strip() for p in parts if p and str(p).strip()]
+    if not chunks:
+        return None
+    s = "\n---\n".join(chunks)
+    if len(s) > _RUN_LLM_SNIPPET_MAX:
+        return s[: _RUN_LLM_SNIPPET_MAX - 1] + "…"
+    return s
 
 
 async def execute_scrape(session: AsyncSession, portal_id: int | None = None) -> ScrapeRun:
@@ -33,7 +45,7 @@ async def execute_scrape(session: AsyncSession, portal_id: int | None = None) ->
 
 
 async def _execute_scrape_impl(session: AsyncSession, portal_id: int | None = None) -> ScrapeRun:
-    q = select(Portal).where(Portal.enabled.is_(True))
+    q = select(Portal).where(Portal.enabled.is_(True)).order_by(Portal.id)  # type: ignore[arg-type]
     if portal_id is not None:
         q = q.where(Portal.id == portal_id)
     portals = (await session.exec(q)).all()
@@ -58,16 +70,19 @@ async def _execute_scrape_impl(session: AsyncSession, portal_id: int | None = No
     csv_rows: list[dict] = []
     new_count = 0
     updated_count = 0
+    llm_snippet_parts: list[str] = []
 
     try:
         patterns = await active_patterns(session)
         async with persistent_browser_context() as ctx:
             for portal in portals:
-                rows = await run_portal_llm_pass(session, portal, ctx)
+                rows, llm_piece = await run_portal_llm_pass(session, portal, ctx)
+                if llm_piece:
+                    llm_snippet_parts.append(f"[{portal.name}]\n{llm_piece}")
                 rows = await enrich_with_detail_phones(
                     rows,
                     ctx,
-                    fetch_detail=portal.fetch_detail_for_phone,
+                    fetch_detail=True,
                 )
                 for row in rows:
                     kind, listing = await merge_listing_row(
@@ -116,6 +131,7 @@ async def _execute_scrape_impl(session: AsyncSession, portal_id: int | None = No
         run_final.csv_path = str(csv_path)
         run_final.new_listings = new_count
         run_final.updated_listings = updated_count
+        run_final.llm_response_snippet = _merge_run_llm_snippets(llm_snippet_parts)
         session.add(run_final)
         await session.commit()
         await session.refresh(run_final)
@@ -134,6 +150,10 @@ async def _execute_scrape_impl(session: AsyncSession, portal_id: int | None = No
                     "`GET /api/llm-check`, expose Ollama on `0.0.0.0:11434`, or "
                     "`docker compose -f docker-compose.host.yml up` (see README)."
                 )
+            fail_parts = list(llm_snippet_parts)
+            if isinstance(exc, LlmExtractionEmptyError) and getattr(exc, "raw_snippet", "").strip():
+                fail_parts.append(f"[LLM]\n{exc.raw_snippet}")
+            run_db.llm_response_snippet = _merge_run_llm_snippets(fail_parts)
             run_db.error_message = err_text
             session.add(run_db)
             await session.commit()

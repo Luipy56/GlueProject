@@ -28,8 +28,12 @@ async def chat_completion_json(
     model: str,
     temperature: float,
     messages: list[dict[str, str]],
-) -> dict[str, Any]:
-    """OpenAI-compatible chat completions; returns parsed JSON object from message content."""
+) -> tuple[dict[str, Any], str]:
+    """OpenAI-compatible chat completions.
+
+    Returns ``(parsed_json_object, raw_message_text)`` where *raw_message_text* is the
+    assistant message body before JSON extraction (for diagnostics / refusal heuristics).
+    """
     root = normalize_openai_compatible_base_url(base_url)
     url = root.rstrip("/") + "/chat/completions"
     headers: dict[str, str] = {"Content-Type": "application/json"}
@@ -56,4 +60,4 @@ async def chat_completion_json(
         text = "".join(part.get("text", "") for part in content if isinstance(part, dict))
     else:
         text = str(content)
-    return _extract_json_object(text)
+    return _extract_json_object(text), text

@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Bump this when you ship a new Docker image so you can confirm the UI is updated.
-APP_VERSION = "0.0.8"
+APP_VERSION = "0.0.33"
 
 
 def llm_base_url_from_env() -> str | None:
@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     data_dir: Path = Path("./data")
     database_url: str | None = None
     """If unset, uses sqlite+aiosqlite under data_dir."""
+    crawl4ai_page_timeout_ms: int = 90_000
+    """Navigation / crawl timeout for optional Crawl4AI listing strategy."""
+    listing_agent_max_steps: int = 0
+    """Reserved for future browser-agent mode (0 = disabled / not used)."""
 
     @property
     def sqlite_path(self) -> Path:

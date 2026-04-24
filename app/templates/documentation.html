@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}{{ _('docs.title') }}{% endblock %}
+{% block content %}
+<style>
+  .doc-page .doc-toc {
+    padding: 1rem 1.15rem;
+    margin-bottom: 1.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 0.9rem;
+  }
+  .doc-page .doc-toc ul { margin: 0.35rem 0 0; padding-left: 1.15rem; }
+  .doc-page .doc-toc li { margin: 0.25rem 0; }
+  .doc-page h2 {
+    font-size: 1.08rem;
+    margin: 1.75rem 0 0.65rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid var(--border);
+    letter-spacing: -0.02em;
+  }
+  .doc-page h2:first-of-type { border-top: none; margin-top: 0.5rem; padding-top: 0; }
+  .doc-page .card + .card { margin-top: 1rem; }
+  .doc-page ul { margin: 0.5rem 0 0.75rem; padding-left: 1.15rem; }
+  .doc-page li { margin: 0.35rem 0; }
+  .doc-page p { margin: 0.5rem 0 0.75rem; }
+  .doc-page .muted { margin-top: 0; }
+  .changelog-version { font-size: 1rem; font-weight: 700; margin: 0 0 0.35rem; }
+  .changelog-date { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin: 0 0 0.65rem; }
+  .doc-page details.doc-changelog {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    margin-top: 0.65rem;
+  }
+  .doc-page details.doc-changelog > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.75rem;
+    font-size: 1.08rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    user-select: none;
+  }
+  .doc-page details.doc-changelog > summary::-webkit-details-marker { display: none; }
+  .doc-page details.doc-changelog > summary::marker { content: ""; }
+  .doc-page details.doc-changelog > summary .doc-changelog-chevron {
+    display: inline-block;
+    margin-right: 0.35rem;
+    font-size: 0.75em;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+    transform: rotate(-90deg);
+  }
+  .doc-page details.doc-changelog[open] > summary .doc-changelog-chevron {
+    transform: rotate(0deg);
+  }
+  .doc-page details.doc-changelog[open] > summary {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .doc-page .doc-changelog-inner {
+    padding: 0.85rem 1rem 1.1rem;
+  }
+  .doc-page .doc-changelog-inner .card {
+    margin-bottom: 0.85rem;
+  }
+  .doc-page .doc-changelog-inner .card:last-child { margin-bottom: 0; }
+</style>
+<div class="doc-page">
+  <h1>{{ _('docs.h1') }}</h1>
+  <p class="muted">{{ _('docs.lead') }}</p>
+
+  <nav class="doc-toc" aria-label="{{ _('docs.toc_title') }}">
+    <strong>{{ _('docs.toc_title') }}</strong>
+    <ul>
+      <li><a href="#use">{{ _('docs.section.use') }}</a></li>
+      <li><a href="#config">{{ _('docs.section.config') }}</a></li>
+      <li><a href="#portals-llm">{{ _('docs.section.portals_llm') }}</a></li>
+      <li><a href="#runs">{{ _('docs.section.runs') }}</a></li>
+      <li><a href="#blacklist">{{ _('docs.section.blacklist') }}</a></li>
+      <li><a href="#env">{{ _('docs.section.env') }}</a></li>
+      <li><a href="#api">{{ _('docs.section.api') }}</a></li>
+      <li><a href="#docker">{{ _('docs.section.docker') }}</a></li>
+      <li><a href="#more">{{ _('docs.section.more') }}</a></li>
+      <li><a href="#changelog">{{ _('docs.section.changelog') }}</a></li>
+    </ul>
+  </nav>
+
+  <div class="card">
+    <h2 id="use">{{ _('docs.section.use') }}</h2>
+    {% if locale == 'es' %}
+    <p><strong>Listados</strong> (<code>/</code>): tabla de anuncios deduplicados por URL canónica. Puedes filtrar para ver solo los resultados de la <strong>última ejecución correcta</strong> o ver el histórico completo. El botón <strong>Ejecutar ahora</strong> lanza un scraping manual (puede tardar varios minutos; el botón se desactiva al enviar).</p>
+    <p>Desde cada fila puedes abrir el anuncio en el portal y enviar la URL a la <strong>Blacklist</strong> para ocultarla en el listado y en futuros merges.</p>
+    <p><strong>Idioma y tema</strong>: el selector de idioma guarda preferencia en una cookie; el tema claro/oscuro se guarda en <code>localStorage</code>. La versión mostrada en la cabecera corresponde a <code>APP_VERSION</code> en el despliegue.</p>
+    {% elif locale == 'en' %}
+    <p><strong>Listings</strong> (<code>/</code>): table of deduplicated listings by canonical URL. Filter to show only rows from the <strong>last successful run</strong> or view the full history. <strong>Run now</strong> starts a manual scrape (can take several minutes; the button disables on submit).</p>
+    <p>From each row you can open the listing and send its URL to the <strong>Blacklist</strong> to hide it from the table and future merges.</p>
+    <p><strong>Language and theme</strong>: language is stored in a cookie; light/dark theme is stored in <code>localStorage</code>. The header version pill reflects <code>APP_VERSION</code> in the deployment.</p>
+    {% else %}
+    <p><strong>Inserate</strong> (<code>/</code>): Tabelle deduplizierter Inserate nach kanonischer URL. Filter für nur die <strong>letzte erfolgreiche Ausführung</strong> oder die komplette Historie. <strong>Jetzt ausführen</strong> startet einen manuellen Scrape (kann mehrere Minuten dauern; Button wird beim Absenden deaktiviert).</p>
+    <p>Pro Zeile: Inserat im Portal öffnen oder URL zur <strong>Blacklist</strong> senden (Ausblendung und keine zukünftigen Merges).</p>
+    <p><strong>Sprache und Design</strong>: Sprache per Cookie; helles/dunkles Theme in <code>localStorage</code>. Versions-Badge = <code>APP_VERSION</code> des Deployments.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 id="config">{{ _('docs.section.config') }}</h2>
+    {% if locale == 'es' %}
+    <p>En <strong>Config</strong> (<code>/config</code>) se guardan ajustes en la base de datos SQLite:</p>
+    <ul>
+      <li><strong>Intervalo del scheduler</strong> (horas): frecuencia del scraping automático tras reiniciar la aplicación.</li>
+      <li><strong>Proveedor LLM</strong>: OpenAI-compatible (remoto) u Ollama (local, API <code>/v1</code>).</li>
+      <li><strong>Base URL</strong>, <strong>API key</strong>, <strong>modelo</strong> y <strong>temperature</strong> para las llamadas al LLM.</li>
+      <li><strong>Estrategia de listado</strong> (HTML → candidatos) y un único <strong>prompt LLM</strong> (mensaje de sistema) para la extracción JSON de listados.</li>
+    </ul>
+    <p>La aplicación <strong>resuelve sola</strong> la URL efectiva del endpoint (prioridad: variable de entorno <code>GPM_LLM_BASE_URL</code> → valor guardado → por defecto la API de OpenAI). En entornos locales prueba varias direcciones hasta que <code>GET /v1/models</code> responda. Tras guardar, la caché de resolución se invalida. El enlace <strong>Probar</strong> abre <code>/api/llm-check</code> en otra pestaña con un informe JSON.</p>
+    {% elif locale == 'en' %}
+    <p><strong>Settings</strong> (<code>/config</code>) persist values in SQLite:</p>
+    <ul>
+      <li><strong>Scheduler interval</strong> (hours): automatic scrape cadence after an app restart.</li>
+      <li><strong>LLM provider</strong>: OpenAI-compatible (remote) or Ollama (local <code>/v1</code> API).</li>
+      <li><strong>Base URL</strong>, <strong>API key</strong>, <strong>model</strong>, and <strong>temperature</strong>.</li>
+      <li><strong>Listing strategy</strong> (HTML → candidates) and a single <strong>LLM prompt</strong> (system message) for JSON listing extraction.</li>
+    </ul>
+    <p>The app <strong>auto-resolves</strong> the effective base URL (order: <code>GPM_LLM_BASE_URL</code> → stored value → OpenAI default). Local setups try several hosts until <code>GET /v1/models</code> succeeds. Saving clears the resolver cache. <strong>Test</strong> opens <code>/api/llm-check</code> in a new tab.</p>
+    {% else %}
+    <p><strong>Einstellungen</strong> (<code>/config</code>), gespeichert in SQLite:</p>
+    <ul>
+      <li><strong>Scheduler-Intervall</strong> (Stunden): automatischer Scrape nach App-Neustart.</li>
+      <li><strong>LLM-Anbieter</strong>: OpenAI-kompatibel oder Ollama (lokal, <code>/v1</code>).</li>
+      <li><strong>Basis-URL</strong>, <strong>API-Schlüssel</strong>, <strong>Modell</strong>, <strong>Temperature</strong>.</li>
+      <li><strong>Listings-Strategie</strong> (HTML → Kandidaten) und ein <strong>LLM-Prompt</strong> (Systemnachricht) für die JSON-Extraktion.</li>
+    </ul>
+    <p>Die App <strong>löst die Basis-URL automatisch auf</strong> (<code>GPM_LLM_BASE_URL</code> → gespeicherter Wert → OpenAI-Standard). Beim Speichern wird der Resolver-Cache geleert. <strong>Test</strong> öffnet <code>/api/llm-check</code>.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 id="portals-llm">{{ _('docs.section.portals_llm') }}</h2>
+    {% if locale == 'es' %}
+    <p><strong>Portales</strong> (<code>/portals</code>): solo <strong>nombre</strong>, <strong>URL de búsqueda</strong> y <strong>Activo</strong>. En cada ejecución se visitan en secuencia (por ID) todos los portales activos. La estrategia de listado y los prompts están en <strong>Configuración</strong> (<code>/config</code>). Si el listado no incluye teléfono, el scraper intenta la ficha de detalle cuando el portal lo permite (p. ej. Idealista).</p>
+    <p>La primera base de datos vacía crea un portal semilla «Idealista Garraf». Los selectores HTML de los portales pueden romperse si el sitio cambia el diseño.</p>
+    <p><strong>LLM</strong>: además de Config, puedes fijar <code>GPM_LLM_BASE_URL</code> en el entorno (p. ej. Docker/Kubernetes) para forzar la URL sin tocar la UI. Dentro de un contenedor, <code>127.0.0.1</code> apunta al propio contenedor: para Ollama en el host suele usarse <code>http://host.docker.internal:11434</code> (ver README/compose).</p>
+    {% elif locale == 'en' %}
+    <p><strong>Portals</strong> (<code>/portals</code>): only <strong>name</strong>, <strong>search URL</strong>, and <strong>Enabled</strong>. Each run visits enabled portals in sequence (by ID). Listing strategy and prompts live under <strong>Settings</strong> (<code>/config</code>). If the listing page omits a phone number, the scraper may open the listing detail page when the portal supports it (e.g. Idealista).</p>
+    <p>An empty database seeds a default «Idealista Garraf» portal. HTML selectors may need updates when a site changes layout.</p>
+    <p><strong>LLM</strong>: besides Settings, set <code>GPM_LLM_BASE_URL</code> in the environment to force the base URL. Inside a container, <code>127.0.0.1</code> is the container itself—use <code>http://host.docker.internal:11434</code> for host Ollama (see README/compose).</p>
+    {% else %}
+    <p><strong>Portale</strong> (<code>/portals</code>): nur <strong>Name</strong>, <strong>Such-URL</strong> und <strong>Aktiv</strong>. Pro Lauf werden aktive Portale nacheinander (nach ID) verarbeitet. Strategie und Prompts stehen unter <strong>Einstellungen</strong> (<code>/config</code>). Fehlt die Telefonnummer auf der Übersicht, öffnet der Scraper bei unterstützten Portalen (z. B. Idealista) ggf. die Detailseite.</p>
+    <p>Leere DB: Standard-Portal «Idealista Garraf». Selektoren können bei Layout-Änderungen brechen.</p>
+    <p><strong>LLM</strong>: optional <code>GPM_LLM_BASE_URL</code> in der Umgebung. Im Container ist <code>127.0.0.1</code> der Container selbst — Host-Ollama oft <code>http://host.docker.internal:11434</code>.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 id="runs">{{ _('docs.section.runs') }}</h2>
+    {% if locale == 'es' %}
+    <p><strong>Ejecuciones</strong> (<code>/runs</code>): historial de scrapings con estado, recuentos de nuevos/actualizados y mensaje de error si aplica. Solo puede haber <strong>una ejecución a la vez</strong>; si intentas lanzar otra, verás un aviso. Puedes descargar el <strong>CSV</strong> de cada ejecución correcta que haya generado archivo.</p>
+    <p>El formulario de ejecución manual admite un <strong>ID de portal</strong> opcional para limitar el scrape a un portal concreto; vacío = todos los portales activos.</p>
+    {% elif locale == 'en' %}
+    <p><strong>Runs</strong> (<code>/runs</code>): scrape history with status, new/updated counts, and error text when failed. Only <strong>one run at a time</strong>; a second trigger shows a busy message. Download per-run <strong>CSV</strong> when available.</p>
+    <p>The manual form accepts an optional <strong>portal ID</strong>; empty means all enabled portals.</p>
+    {% else %}
+    <p><strong>Läufe</strong> (<code>/runs</code>): Verlauf mit Status, Zählern und Fehlertext. Nur <strong>ein Lauf gleichzeitig</strong>. <strong>CSV</strong> pro Lauf herunterladen, falls vorhanden.</p>
+    <p>Optionale <strong>Portal-ID</strong> im Formular; leer = alle aktiven Portale.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 id="blacklist">{{ _('docs.section.blacklist') }}</h2>
+    {% if locale == 'es' %}
+    <p>Patrones por URL canónica exacta o prefijo. Las coincidencias no se muestran en el listado principal y se omiten al fusionar resultados nuevos.</p>
+    {% elif locale == 'en' %}
+    <p>Patterns are exact canonical URLs or prefixes. Matches are hidden from the main table and skipped when merging new scrape results.</p>
+    {% else %}
+    <p>Muster: exakte kanonische URL oder Präfix. Treffer werden in der Hauptliste ausgeblendet und beim Merge übersprungen.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 id="env">{{ _('docs.section.env') }}</h2>
+    {% if locale == 'es' %}
+    <ul>
+      <li><code>GPM_DATA_DIR</code>: directorio de <code>app.db</code>, CSV en <code>runs/</code> y perfil persistente de Playwright.</li>
+      <li><code>GPM_LLM_BASE_URL</code> (opcional): prioridad sobre la Base URL guardada en Config.</li>
+    </ul>
+    <p>Otras variables de aplicación pueden definirse vía <code>.env</code> según <code>app/config.py</code> (prefijo <code>GPM_</code>).</p>
+    {% elif locale == 'en' %}
+    <ul>
+      <li><code>GPM_DATA_DIR</code>: directory for <code>app.db</code>, <code>runs/*.csv</code>, and the Playwright profile.</li>
+      <li><code>GPM_LLM_BASE_URL</code> (optional): overrides the stored Settings base URL.</li>
+    </ul>
+    <p>Additional app settings may be loaded from <code>.env</code> per <code>app/config.py</code> (<code>GPM_</code> prefix).</p>
+    {% else %}
+    <ul>
+      <li><code>GPM_DATA_DIR</code>: Verzeichnis für <code>app.db</code>, <code>runs/*.csv</code>, Playwright-Profil.</li>
+      <li><code>GPM_LLM_BASE_URL</code> (optional): überschreibt die gespeicherte Basis-URL.</li>
+    </ul>
+    <p>Weitere Einstellungen aus <code>.env</code> gemäß <code>app/config.py</code> (Präfix <code>GPM_</code>).</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 id="api">{{ _('docs.section.api') }}</h2>
+    {% if locale == 'es' %}
+    <ul>
+      <li><code>GET /api/llm-check</code> — JSON con la URL resuelta e informe de intentos (misma lógica que el scraper).</li>
+      <li><code>POST /api/run</code> — cuerpo JSON opcional <code>{"portal_id": 1}</code>; devuelve metadatos del <code>ScrapeRun</code>. Respuesta <code>409</code> si ya hay un scrape en curso.</li>
+    </ul>
+    {% elif locale == 'en' %}
+    <ul>
+      <li><code>GET /api/llm-check</code> — JSON with resolved URL and attempt report (same logic as the scraper).</li>
+      <li><code>POST /api/run</code> — optional JSON <code>{"portal_id": 1}</code>; returns run metadata. <code>409</code> if a scrape is already running.</li>
+    </ul>
+    {% else %}
+    <ul>
+      <li><code>GET /api/llm-check</code> — JSON mit aufgelöster URL und Versuchsprotokoll.</li>
+      <li><code>POST /api/run</code> — optionales JSON <code>{"portal_id": 1}</code>; Metadaten des Laufs. <code>409</code>, wenn bereits ein Scrape läuft.</li>
+    </ul>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 id="docker">{{ _('docs.section.docker') }}</h2>
+    {% if locale == 'es' %}
+    <p>La imagen copia el código al construir: tras cambios en <code>app/</code> o plantillas, reconstruye la imagen (<code>docker compose up -d --build</code> o equivalente). Un simple reinicio del contenedor no sustituye el código empaquetado.</p>
+    <p>Para que el contenedor alcance Ollama o un túnel en el anfitrión, revisa el README (red bridge, <code>host.docker.internal</code>, binding en <code>0.0.0.0</code>).</p>
+    {% elif locale == 'en' %}
+    <p>The image copies code at build time: after changes under <code>app/</code> or templates, rebuild (<code>docker compose up -d --build</code>). Restarting the container alone does not refresh copied files.</p>
+    <p>See the README for reaching host Ollama/tunnels (bridge network, <code>host.docker.internal</code>, bind <code>0.0.0.0</code>).</p>
+    {% else %}
+    <p>Die Image enthält den Stand beim Build: nach Änderungen an <code>app/</code> oder Templates neu bauen (<code>docker compose up -d --build</code>). Nur <code>restart</code> reicht nicht.</p>
+    <p>README: Zugriff auf Host-Ollama/Tunnel (Bridge, <code>host.docker.internal</code>, Bind <code>0.0.0.0</code>).</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 id="more">{{ _('docs.section.more') }}</h2>
+    {% if locale == 'es' %}
+    <p>El repositorio incluye <code>README.md</code> con detalle sobre resolución universal de URL del LLM, ejecución local y notas legales/técnicas sobre scraping. Los cambios relevantes del producto deben reflejarse también en esta página y en <code>app/changelog_data.py</code> (convención del proyecto).</p>
+    {% elif locale == 'en' %}
+    <p>The repository <code>README.md</code> expands on universal LLM URL resolution, local setup, and scraping caveats. Product-facing changes should also be reflected here and in <code>app/changelog_data.py</code> per project convention.</p>
+    {% else %}
+    <p>Das Repo-<code>README.md</code> ergänzt LLM-URL-Auflösung, lokales Setup und Scraping-Hinweise. Produktänderungen auch hier und in <code>app/changelog_data.py</code> dokumentieren.</p>
+    {% endif %}
+  </div>
+
+  <details id="changelog" class="doc-changelog">
+    <summary>
+      <span class="doc-changelog-chevron" aria-hidden="true">▸</span>
+      <span>{{ _('docs.changelog_summary') }}</span>
+    </summary>
+    <div class="doc-changelog-inner">
+      {% for entry in changelog %}
+      <div class="card">
+        <p class="changelog-version">{{ entry.version }}</p>
+        <p class="changelog-date">{{ entry.date }}</p>
+        <ul>
+          {# `entry.items` would be dict.items() in Jinja — use bracket key `items` #}
+          {% set entry_items = entry['items'] %}
+          {% set lines = entry_items[locale] if locale in entry_items else entry_items['es'] %}
+          {% for line in lines %}
+          <li>{{ line }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </details>
+</div>
+{% endblock %}

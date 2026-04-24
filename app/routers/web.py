@@ -13,21 +13,47 @@ from markupsafe import Markup
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.changelog_data import CHANGELOG
 from app.config import APP_VERSION, llm_base_url_from_env
-from app.i18n import LOCALES, html_lang_attr, resolve_locale, translate
+from app.i18n import LOCALES, LOCALE_NATIVE_LABELS, html_lang_attr, resolve_locale, translate
 from app.llm.resolver import clear_llm_resolver_cache
 from app.db import AsyncSessionLocal
 from app.deps import get_session
 from app.jobs.scrape_job import SCRAPER_BUSY, execute_scrape
 from app.models import BlacklistEntry, Listing, Portal, RunStatus, ScrapeRun
 from app.services.blacklist import active_patterns, is_blocked
-from app.settings_store import get_all_settings, upsert_settings
+from app.settings_store import (
+    delete_setting,
+    effective_list_extraction_system_prompt,
+    get_all_settings,
+    upsert_settings,
+)
 from app.worker.scheduler import reschedule_scrape
 
 router = APIRouter(tags=["web"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 templates.env.globals["app_version"] = APP_VERSION
+templates.env.globals["gpm_locales"] = sorted(LOCALES)
+templates.env.globals["gpm_locale_native_labels"] = LOCALE_NATIVE_LABELS
 templates.env.filters["tojson"] = lambda value: Markup(json.dumps(value, ensure_ascii=False))
+
+
+def _run_dt_filter(value: Any) -> str:
+    """Runs table: show second precision without microseconds."""
+    if value is None:
+        return ""
+    if hasattr(value, "strftime"):
+        try:
+            return value.strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            pass
+    s = str(value)
+    if len(s) > 19 and s[19] == ".":
+        return s[:19]
+    return s
+
+
+templates.env.filters["run_dt"] = _run_dt_filter
 
 
 def _page_response(request: Request, name: str, context: Mapping[str, Any] | None = None) -> HTMLResponse:
@@ -124,19 +150,26 @@ async def index(
     )
 
 
+@router.get("/documentation", response_class=HTMLResponse)
+async def documentation_get(request: Request) -> HTMLResponse:
+    return _page_response(request, "documentation.html", {"changelog": CHANGELOG})
+
+
 @router.get("/config", response_class=HTMLResponse)
 async def config_get(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
     cfg = await get_all_settings(session)
+    display = dict(cfg)
+    display["list_extraction_system_prompt"] = effective_list_extraction_system_prompt(cfg)
     env_llm = llm_base_url_from_env()
     effective_llm = env_llm or (cfg.get("llm_base_url", "").strip() or "https://api.openai.com/v1")
     return _page_response(
         request,
         "config.html",
         {
-            "settings": cfg,
+            "settings": display,
             "llm_env_override": env_llm,
             "llm_base_url_effective": effective_llm,
         },
@@ -153,8 +186,11 @@ async def config_post(
     llm_api_key: str = Form(""),
     llm_model: str = Form(...),
     llm_temperature: str = Form(...),
+    listing_strategy: str = Form("static"),
     list_extraction_system_prompt: str = Form(...),
 ) -> RedirectResponse:
+    from app.scraper.listing_sources import normalize_listing_strategy
+
     await upsert_settings(
         session,
         {
@@ -164,9 +200,11 @@ async def config_post(
             "llm_api_key": llm_api_key.strip(),
             "llm_model": llm_model.strip(),
             "llm_temperature": llm_temperature.strip(),
+            "listing_strategy": normalize_listing_strategy(listing_strategy),
             "list_extraction_system_prompt": list_extraction_system_prompt,
         },
     )
+    await delete_setting(session, "listing_extra_instructions")
     clear_llm_resolver_cache()
     sched = getattr(request.app.state, "scheduler", None)
     if sched is not None:
@@ -191,14 +229,10 @@ async def portals_add(
     session: AsyncSession = Depends(get_session),
     name: str = Form(...),
     search_url: str = Form(...),
-    prompt_template: str = Form(...),
-    fetch_detail_for_phone: str = Form("off"),
 ) -> RedirectResponse:
     p = Portal(
         name=name.strip(),
         search_url=search_url.strip(),
-        prompt_template=prompt_template,
-        fetch_detail_for_phone=(fetch_detail_for_phone == "on"),
         enabled=True,
     )
     session.add(p)
@@ -212,16 +246,12 @@ async def portals_edit(
     portal_id: int = Form(...),
     name: str = Form(...),
     search_url: str = Form(...),
-    prompt_template: str = Form(...),
-    fetch_detail_for_phone: str = Form("off"),
     enabled: str = Form("off"),
 ) -> RedirectResponse:
     p = await session.get(Portal, portal_id)
     if p:
         p.name = name.strip()
         p.search_url = search_url.strip()
-        p.prompt_template = prompt_template
-        p.fetch_detail_for_phone = fetch_detail_for_phone == "on"
         p.enabled = enabled == "on"
         session.add(p)
         await session.commit()
@@ -356,8 +386,15 @@ async def blacklist_from_listing(
     return RedirectResponse("/", status_code=303)
 
 
+@router.get("/run-now")
+async def run_now_get() -> RedirectResponse:
+    """POST runs the scrape; a bare GET (bookmark bar) lands on Ejecuciones with the themed UI."""
+    return RedirectResponse("/runs", status_code=303)
+
+
 @router.post("/run-now")
 async def run_now(
+    request: Request,
     portal_id: str = Form(""),
 ) -> RedirectResponse:
     """Use a dedicated DB session so long scrapes do not share the request session (avoids async/greenlet issues)."""

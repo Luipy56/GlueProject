@@ -7,13 +7,6 @@ from app.models import AppSetting, Portal
 DEFAULT_PORTAL = {
     "name": "Idealista Garraf",
     "search_url": "https://www.idealista.com/venta-viviendas/barcelona/garraf/",
-    "prompt_template": (
-        "You classify real-estate listing snippets from Idealista. "
-        "Private seller: individual name, no major agency branding. "
-        "Agency: known agency names/logos implied in text. "
-        "Return strict JSON only."
-    ),
-    "fetch_detail_for_phone": True,
     "enabled": True,
 }
 
@@ -24,11 +17,17 @@ DEFAULT_SETTINGS: dict[str, str] = {
     "llm_api_key": "",
     "llm_model": "gpt-4o-mini",
     "llm_temperature": "0.2",
+    "listing_strategy": "static",
     "list_extraction_system_prompt": (
         "You are a structured extraction assistant. "
-        "Given listing snippets (url + text), output JSON with key "
-        "'listings': array of {url,title,price_raw,m2,seller_type} "
-        "where seller_type is one of: private, agency, unknown."
+        "You must NOT claim you cannot browse the web: snippets and URLs are already in the user JSON; "
+        "you only classify and copy fields into JSON. "
+        "Classify each listing snippet: private seller means individual name, no major agency branding; "
+        "agency means known agency names or logos implied in text. "
+        "The user message is JSON with keys portal, search_url, and listings (array of {url, text}). "
+        "Output JSON with key 'listings': array of {url,title,price_raw,m2,seller_type} "
+        "where seller_type is one of: private, agency, unknown. "
+        "Include one row per input listing when the url is present. Return strict JSON only."
     ),
 }
 

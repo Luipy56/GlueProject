@@ -1,0 +1,6 @@
+# Optional stack for experimental LLM-driven browser agents (NOT installed by default).
+# Install only if you implement app/scraper/agent_listing.py against one of these.
+#
+# Example (versions illustrative — pin what works with your Python):
+# browser-use>=0.1.0
+# langchain-ollama

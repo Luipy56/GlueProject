@@ -20,15 +20,12 @@ class SellerType(str, Enum):
 
 
 class Portal(SQLModel, table=True):
+    """One search URL per row; global scrape/LLM options live in AppSetting (Config)."""
+
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     search_url: str
-    """Seed URL for listing search (e.g. Idealista Garraf)."""
-    prompt_template: str = Field(
-        sa_column=Column(Text),
-        default="Classify each listing as private or agency from the snippets.",
-    )
-    fetch_detail_for_phone: bool = Field(default=True)
+    """Listing search URL scraped when this portal is processed (runs iterate portals in id order)."""
     enabled: bool = Field(default=True)
 
 
@@ -42,6 +39,8 @@ class ScrapeRun(SQLModel, table=True):
     new_listings: int = Field(default=0)
     updated_listings: int = Field(default=0)
     error_message: Optional[str] = Field(default=None, sa_column=Column(Text))
+    llm_response_snippet: Optional[str] = Field(default=None, sa_column=Column(Text))
+    """Truncated raw assistant message from the listing-extraction LLM call(s)."""
 
 
 class Listing(SQLModel, table=True):

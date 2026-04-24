@@ -2,17 +2,11 @@
 {% block title %}{{ _('config.title') }}{% endblock %}
 {% block content %}
 <h1>{{ _('config.h1') }}</h1>
-<p class="muted" style="margin-bottom:1rem;">
-  {{ _('config.intro') }}
-</p>
+<p class="muted" style="margin-bottom:1rem;"><a href="/documentation">{{ _('config.docs_link') }}</a></p>
 {% if llm_env_override %}
-<div class="card card--warning" style="margin-bottom:1rem;">
-  <strong>{{ _('config.llm_env_title') }}</strong>
-  <p class="muted" style="margin:0.35rem 0 0;">
-    {{ _('config.llm_env_body') }}
-    <code>{{ llm_base_url_effective }}</code>
-  </p>
-</div>
+<p class="muted card card--warning" style="margin-bottom:1rem;padding:0.6rem 0.85rem;">
+  <code>GPM_LLM_BASE_URL</code><span aria-hidden="true"> → </span><code>{{ llm_base_url_effective }}</code>
+</p>
 {% endif %}
 <form method="post" action="/config" class="card">
   <div class="grid2">
@@ -32,13 +26,8 @@
       <label for="llm_base_url">{{ _('config.base_url') }}</label>
       <input id="llm_base_url" name="llm_base_url" type="text"
              value="{{ settings.get('llm_base_url', '') }}" required />
-      <p class="muted" style="margin:0.35rem 0 0;">
-        {{ _('config.base_url_help_effective') }} <code>{{ llm_base_url_effective }}</code>
-        {{ _('config.base_url_suffix') }}
-        {% if not llm_env_override %}
-        {{ _('config.base_url_local_hint') }}
-        {% endif %}
-        <a href="/api/llm-check" target="_blank" rel="noopener">{{ _('config.test_link') }}</a>
+      <p class="muted" style="margin:0.3rem 0 0;font-size:0.85rem;">
+        <code>{{ llm_base_url_effective }}</code><span aria-hidden="true"> · </span><a href="/api/llm-check" target="_blank" rel="noopener">{{ _('config.test_link') }}</a>
       </p>
     </div>
     <div>
@@ -53,10 +42,18 @@
       <label for="llm_temperature">{{ _('config.temperature') }}</label>
       <input id="llm_temperature" name="llm_temperature" type="text" value="{{ settings.get('llm_temperature', '0.2') }}" required />
     </div>
+    <div style="grid-column: 1 / -1;">
+      <label for="listing_strategy">{{ _('config.listing_strategy') }}</label>
+      <select id="listing_strategy" name="listing_strategy">
+        <option value="static" {% if settings.get('listing_strategy', 'static') == 'static' %}selected{% endif %}>{{ _('config.strategy_static') }}</option>
+        <option value="crawl4ai" {% if settings.get('listing_strategy') == 'crawl4ai' %}selected{% endif %}>{{ _('config.strategy_crawl4ai') }}</option>
+        <option value="agent_experimental" {% if settings.get('listing_strategy') == 'agent_experimental' %}selected{% endif %}>{{ _('config.strategy_agent') }}</option>
+      </select>
+    </div>
   </div>
   <div style="margin-top:1rem;">
     <label for="list_extraction_system_prompt">{{ _('config.system_prompt') }}</label>
-    <textarea id="list_extraction_system_prompt" name="list_extraction_system_prompt" required>{{ settings.get('list_extraction_system_prompt', '') }}</textarea>
+    <textarea id="list_extraction_system_prompt" name="list_extraction_system_prompt" rows="12" required>{{ settings.get('list_extraction_system_prompt', '') }}</textarea>
   </div>
   <p style="margin-top:1rem;"><button class="primary" type="submit">{{ _('config.save') }}</button></p>
 </form>

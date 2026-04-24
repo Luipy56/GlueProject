@@ -1,6 +1,59 @@
 {% extends "base.html" %}
 {% block title %}{{ _('runs.title') }}{% endblock %}
 {% block content %}
+<style>
+  /* Fixed layout so long error / LLM text wraps inside the cell instead of stretching the column. */
+  table.gpm-runs-table {
+    table-layout: fixed;
+    text-align: start;
+  }
+  table.gpm-runs-table th,
+  table.gpm-runs-table td {
+    vertical-align: top;
+    text-align: start;
+  }
+  table.gpm-runs-table thead th {
+    position: relative;
+    padding-right: 12px;
+  }
+  table.gpm-runs-table thead th:last-child {
+    padding-right: 0.85rem;
+  }
+  table.gpm-runs-table .gpm-col-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    margin-right: -3px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 4;
+    user-select: none;
+    touch-action: none;
+  }
+  table.gpm-runs-table .gpm-col-resizer:hover {
+    background: rgba(82, 82, 91, 0.4);
+  }
+  html[data-theme="light"] table.gpm-runs-table .gpm-col-resizer:hover {
+    background: rgba(63, 63, 70, 0.18);
+  }
+  table.gpm-runs-table .cell-llm-snippet,
+  table.gpm-runs-table .cell-run-detail {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: pre-wrap;
+    vertical-align: top;
+    text-align: start;
+    line-height: 1.45;
+  }
+  table.gpm-runs-table .cell-llm-snippet {
+    font-size: 0.8rem;
+  }
+  table.gpm-runs-table .cell-run-detail {
+    font-size: 0.85rem;
+  }
+</style>
 <h1>{{ _('runs.h1') }}</h1>
 {% if success_message %}
 <div class="banner-ok">
@@ -26,39 +79,156 @@
   </div>
 </form>
 <div class="table-scroll">
-<table>
+<table class="gpm-runs-table" id="gpm-runs-table">
+  <colgroup id="gpm-runs-colgroup">
+    <col style="width:4rem" />
+    <col style="width:11%" />
+    <col style="width:11%" />
+    <col style="width:6.5rem" />
+    <col style="width:4.5rem" />
+    <col style="width:4.5rem" />
+    <col style="width:5.5rem" />
+    <col style="width:22%" />
+    <col style="width:32%" />
+  </colgroup>
   <thead>
     <tr>
-      <th>{{ _('th.id') }}</th>
-      <th>{{ _('th.start') }}</th>
-      <th>{{ _('th.end') }}</th>
-      <th>{{ _('th.status') }}</th>
-      <th>{{ _('th.new') }}</th>
-      <th>{{ _('th.updated') }}</th>
-      <th>{{ _('th.csv') }}</th>
-      <th>{{ _('th.detail') }}</th>
+      <th><span class="gpm-th-label">{{ _('th.id') }}</span><span class="gpm-col-resizer" data-gpm-resize="0" title="{{ _('runs.resize_col')|e }}" role="separator" aria-orientation="vertical"></span></th>
+      <th><span class="gpm-th-label">{{ _('th.start') }}</span><span class="gpm-col-resizer" data-gpm-resize="1" title="{{ _('runs.resize_col')|e }}" role="separator" aria-orientation="vertical"></span></th>
+      <th><span class="gpm-th-label">{{ _('th.end') }}</span><span class="gpm-col-resizer" data-gpm-resize="2" title="{{ _('runs.resize_col')|e }}" role="separator" aria-orientation="vertical"></span></th>
+      <th><span class="gpm-th-label">{{ _('th.status') }}</span><span class="gpm-col-resizer" data-gpm-resize="3" title="{{ _('runs.resize_col')|e }}" role="separator" aria-orientation="vertical"></span></th>
+      <th><span class="gpm-th-label">{{ _('th.new') }}</span><span class="gpm-col-resizer" data-gpm-resize="4" title="{{ _('runs.resize_col')|e }}" role="separator" aria-orientation="vertical"></span></th>
+      <th><span class="gpm-th-label">{{ _('th.updated') }}</span><span class="gpm-col-resizer" data-gpm-resize="5" title="{{ _('runs.resize_col')|e }}" role="separator" aria-orientation="vertical"></span></th>
+      <th><span class="gpm-th-label">{{ _('th.csv') }}</span><span class="gpm-col-resizer" data-gpm-resize="6" title="{{ _('runs.resize_col')|e }}" role="separator" aria-orientation="vertical"></span></th>
+      <th><span class="gpm-th-label">{{ _('th.llm_snippet') }}</span><span class="gpm-col-resizer" data-gpm-resize="7" title="{{ _('runs.resize_col')|e }}" role="separator" aria-orientation="vertical"></span></th>
+      <th><span class="gpm-th-label">{{ _('th.detail') }}</span></th>
     </tr>
   </thead>
   <tbody>
     {% for r in runs %}
     <tr id="run-{{ r.id }}" {% if failed_run_id and r.id == failed_run_id %}class="run-row-failed"{% endif %}>
       <td>{{ r.id }}</td>
-      <td>{{ r.started_at }}</td>
-      <td>{{ r.finished_at or '—' }}</td>
+      <td>{{ r.started_at|run_dt }}</td>
+      <td>{% if r.finished_at %}{{ r.finished_at|run_dt }}{% else %}—{% endif %}</td>
       <td><strong>{{ r.status }}</strong></td>
       <td>{{ r.new_listings }}</td>
       <td>{{ r.updated_listings }}</td>
       <td>{% if r.csv_path %}<a href="/runs/{{ r.id }}/download">{{ _('runs.download') }}</a>{% else %}—{% endif %}</td>
-      <td style="min-width:280px;max-width:560px;white-space:pre-wrap;word-break:break-word;font-size:0.85rem;">
+      <td class="cell-llm-snippet">
+        {% if r.llm_response_snippet %}{{ r.llm_response_snippet }}{% else %}—{% endif %}
+      </td>
+      <td class="cell-run-detail">
         {% if r.error_message %}{{ r.error_message }}{% elif r.status == 'failed' %}<span class="muted">{{ _('runs.no_message') }}</span>{% else %}—{% endif %}
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="8" class="muted">{{ _('runs.empty') }}</td></tr>
+    <tr><td colspan="9" class="muted">{{ _('runs.empty') }}</td></tr>
     {% endfor %}
   </tbody>
 </table>
 </div>
+<script>
+(function () {
+  var table = document.getElementById("gpm-runs-table");
+  if (!table) return;
+  var colgroup = document.getElementById("gpm-runs-colgroup");
+  var cols = colgroup ? colgroup.querySelectorAll("col") : [];
+  if (cols.length !== 9) return;
+  var LS_KEY = "gpm-runs-col-pct-v1";
+  var MIN_PAIR_PCT = 2.8;
+
+  function readColPcts() {
+    var tw = table.getBoundingClientRect().width;
+    if (tw < 1) return null;
+    var row = table.querySelector("thead tr");
+    if (!row) return null;
+    var cells = row.querySelectorAll("th");
+    if (cells.length !== 9) return null;
+    var out = [];
+    for (var i = 0; i < cells.length; i++) {
+      out.push((cells[i].getBoundingClientRect().width / tw) * 100);
+    }
+    return out;
+  }
+
+  function applyColPcts(pct) {
+    for (var i = 0; i < cols.length; i++) {
+      if (i < pct.length) {
+        cols[i].style.width = pct[i].toFixed(3) + "%";
+      }
+    }
+  }
+
+  function loadSaved() {
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      if (!raw) return false;
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr) || arr.length !== 9) return false;
+      var s = arr.reduce(function (a, b) { return a + b; }, 0);
+      if (s < 95 || s > 105) return false;
+      applyColPcts(arr);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function savePcts() {
+    var p = readColPcts();
+    if (!p) return;
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(p));
+    } catch (e) {}
+  }
+
+  loadSaved();
+
+  table.querySelectorAll(".gpm-col-resizer").forEach(function (handle) {
+    handle.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      e.preventDefault();
+      var idx = parseInt(handle.getAttribute("data-gpm-resize"), 10);
+      if (isNaN(idx) || idx < 0 || idx > 7) return;
+      var startX = e.clientX;
+      var startPct = readColPcts();
+      if (!startPct) return;
+      var pairSum = startPct[idx] + startPct[idx + 1];
+
+      function move(ev) {
+        var tw = table.getBoundingClientRect().width;
+        if (tw < 1) return;
+        var dPct = ((ev.clientX - startX) / tw) * 100;
+        var a = startPct[idx] + dPct;
+        var b = pairSum - a;
+        if (a < MIN_PAIR_PCT) {
+          a = MIN_PAIR_PCT;
+          b = pairSum - a;
+        }
+        if (b < MIN_PAIR_PCT) {
+          b = MIN_PAIR_PCT;
+          a = pairSum - b;
+        }
+        var next = startPct.slice();
+        next[idx] = a;
+        next[idx + 1] = b;
+        applyColPcts(next);
+      }
+
+      function up() {
+        document.removeEventListener("pointermove", move);
+        document.removeEventListener("pointerup", up);
+        document.removeEventListener("pointercancel", up);
+        savePcts();
+      }
+
+      document.addEventListener("pointermove", move);
+      document.addEventListener("pointerup", up);
+      document.addEventListener("pointercancel", up);
+    });
+  });
+})();
+</script>
 {% if failed_run_id %}
 <script>
 requestAnimationFrame(function () {

@@ -32,16 +32,19 @@ async def test_execute_scrape_success_path_with_merge_and_final_update(monkeypat
     )
 
     async def fake_pass(session, portal, ctx, max_listings: int = 45):  # noqa: ARG001
-        return [
-            {
-                "url": "https://www.idealista.com/inmueble/99999999/",
-                "title": "Test listing",
-                "price_raw": "100.000 €",
-                "m2": "80 m²",
-                "seller_type": "private",
-                "phone": None,
-            }
-        ]
+        return (
+            [
+                {
+                    "url": "https://www.idealista.com/inmueble/99999999/",
+                    "title": "Test listing",
+                    "price_raw": "100.000 €",
+                    "m2": "80 m²",
+                    "seller_type": "private",
+                    "phone": None,
+                }
+            ],
+            '{"listings":[{"url":"https://www.idealista.com/inmueble/99999999/"}]}',
+        )
 
     monkeypatch.setattr("app.jobs.scrape_job.run_portal_llm_pass", fake_pass)
     monkeypatch.setattr(
@@ -55,6 +58,8 @@ async def test_execute_scrape_success_path_with_merge_and_final_update(monkeypat
     assert run.status == RunStatus.success.value
     assert run.csv_path
     assert run.new_listings >= 1
+    assert run.llm_response_snippet
+    assert "99999999" in run.llm_response_snippet
 
     async with AsyncSessionLocal() as session:
         rows = (await session.exec(select(Listing))).all()

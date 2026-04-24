@@ -1,0 +1,36 @@
+---
+description: Actualizar la documentación en la app cuando cambien funcionalidad o la interfaz
+alwaysApply: true
+---
+
+# Documentación en la aplicación (`/documentation`)
+
+La guía de usuario y el changelog viven en la propia UI.
+
+## Cuándo actualizar
+
+Tras **añadir o modificar funcionalidad** visible o **cambios importantes en la interfaz** (navegación, formularios, flujos, textos de ayuda):
+
+1. **Plantilla** `app/templates/documentation.html` — ajustar las secciones afectadas en **es**, **en** y **de** (bloques por `locale`).
+2. **Cadenas de UI** — si hay textos nuevos en cabecera, nav o páginas, añadir claves en `app/i18n.py` y usar `_('…')` en plantillas.
+3. **Changelog** — añadir una entrada en `app/changelog_data.py` con bullets por idioma; enlazar comportamiento nuevo o corregido de forma breve.
+4. **Versión** — si el cambio es desplegable o quieres verificar caché/Docker, sube **`APP_VERSION`** en `app/config.py` (convención ya descrita en `glue-gpm-context.mdc`).
+
+## Qué no hace falta
+
+- Bump de versión solo por correcciones de documentación si no afectan al binario desplegado (opcional).
+- No duplicar en README todo el manual: el README puede remitir a `/documentation` para la guía detallada.
+
+## Ejemplo de entrada de changelog
+
+```python
+{
+    "version": "0.0.17",
+    "date": "2026-05-01",
+    "items": {
+        "es": ["Descripción breve del cambio."],
+        "en": ["Short description of the change."],
+        "de": ["Kurze Beschreibung der Änderung."],
+    },
+}
+```

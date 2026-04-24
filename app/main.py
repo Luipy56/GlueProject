@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.db import AsyncSessionLocal, init_db
 from app.routers import api, web
@@ -29,3 +32,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Garraf Property Monitor", lifespan=lifespan)
 app.include_router(web.router)
 app.include_router(api.router)
+_static = Path(__file__).resolve().parent / "static"
+app.mount("/static", StaticFiles(directory=str(_static)), name="static")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon_ico() -> FileResponse:
+    return FileResponse(_static / "favicon.png", media_type="image/png")

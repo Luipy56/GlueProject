@@ -1,3 +1,6 @@
+# Producción: imagen con código copiado; tras cambios en app/plantillas hace falta rebuild.
+#   docker compose -f docker-compose.prod.yml up -d --build
+name: glueproject
 services:
   app:
     build: .
