@@ -17,7 +17,8 @@ Aplicación **FastAPI** con UI Jinja, **Playwright** (Chromium), extracción ví
 
 - Local: `uvicorn app.main:app --reload` con `GPM_DATA_DIR` apuntando a un directorio de datos (ver `README.md`).
 - Tests: dependencias de dev en `requirements-dev.txt`; ejecutar pytest desde el venv del proyecto.
-- Docker: `docker compose up --build`; para LLM en el host, usar `http://host.docker.internal:...` en config (no `127.0.0.1` dentro del contenedor).
+- Docker: la imagen **copia** `app/` al construir (`COPY app`), así que **`docker compose restart` no basta** para ver código nuevo. Tras cambios desplegables (app, plantillas, etc.), ejecutar siempre **`docker compose up -d --build`** (o equivalente con rebuild) en este proyecto.
+- Para LLM en el host, usar `http://host.docker.internal:...` en config (no `127.0.0.1` dentro del contenedor).
 
 ## Convenciones al implementar
 

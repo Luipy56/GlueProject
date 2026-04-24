@@ -9,7 +9,7 @@
 </div>
 {% endif %}
 {% if run_error %}
-<div class="card" style="border-color:#7f1d1d;background:#2a1518;">
+<div class="card card--danger">
   <strong>{{ _('runs.error_title') }}</strong>
   <p class="muted" style="margin:0.35rem 0 0.25rem;">{{ _('runs.error_hint') }}</p>
   <pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-size:0.85rem;">{{ run_error }}</pre>
@@ -25,7 +25,7 @@
     <button class="primary" type="submit">{{ _('index.run_now') }}</button>
   </div>
 </form>
-<div style="overflow:auto;">
+<div class="table-scroll">
 <table>
   <thead>
     <tr>

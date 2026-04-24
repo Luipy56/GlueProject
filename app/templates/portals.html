@@ -3,7 +3,7 @@
 {% block content %}
 <h1>{{ _('portals.h1') }}</h1>
 <div class="card">
-  <h2 style="margin-top:0;">{{ _('portals.add_title') }}</h2>
+  <h2 class="card-heading">{{ _('portals.add_title') }}</h2>
   <form method="post" action="/portals/add">
     <label for="name">{{ _('label.name') }}</label>
     <input id="name" name="name" type="text" required />
@@ -17,7 +17,7 @@
 </div>
 {% for p in portals %}
 <div class="card">
-  <h3 style="margin-top:0;">{{ p.name }} {% if not p.enabled %}<span class="muted">{{ _('portals.disabled') }}</span>{% endif %}</h3>
+  <h3 class="card-heading">{{ p.name }} {% if not p.enabled %}<span class="muted">{{ _('portals.disabled') }}</span>{% endif %}</h3>
   <form method="post" action="/portals/edit">
     <input type="hidden" name="portal_id" value="{{ p.id }}" />
     <label>{{ _('label.name') }}</label>
